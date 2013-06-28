@@ -3,9 +3,10 @@
  * and open the template in the editor.
  */
 lexer grammar JSLexerRules;
+import CommonLexerRules;
 
 // lexer rules.
-StringLiteral
+STRING_LITERAL
 	: '"' DoubleStringCharacter* '"'
 	| '\'' SingleStringCharacter* '\''
 	;
@@ -55,7 +56,7 @@ fragment UnicodeEscapeSequence
 	: 'u' HexDigit HexDigit HexDigit HexDigit
 	;
 	
-NumericLiteral
+NUMERIC_LITERAL
 	: DecimalLiteral
 	| HexIntegerLiteral
 	;
@@ -81,7 +82,7 @@ fragment ExponentPart
 	: ('e' | 'E') ('+' | '-') ? DecimalDigit+
 	;
 
-Identifier
+IDENT
 	: IdentifierStart IdentifierPart*
 	;
 	
@@ -96,6 +97,7 @@ fragment IdentifierPart
 	: IdentifierStart //Removed semantic predicate since v4 does not support them, v4 should parse this properly.
 	| UnicodeDigit
 	| UnicodeConnectorPunctuation
+        | '.'
 	;
 	
 fragment UnicodeLetter		// Any character in the Unicode categories "Uppercase letter (Lu)", 

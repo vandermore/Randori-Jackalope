@@ -1,43 +1,64 @@
-/*
+    /*
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-parser grammar TypeScript;
-import CommonLexerRules;
+grammar TypeScript;
 import JSLexerRules;
 
+//TypeScript Declarations
+//*****************************************************************
+//  TypeScript Declaration additions
+//      - Only defining items related to Declaration Source Files
+//          since I am only parsing '.d.ts' files.
+//*****************************************************************
+
+program
+	: NEWLINE!* ambientElements? NEWLINE!* EOF!
+	;
+	
+/*
 program
 	: NEWLINE!* sourceElements NEWLINE!* EOF!
 	;
-	
+*/
+
 sourceElements
 	: sourceElement (NEWLINE!* sourceElement)*
 	;
-	
+
 sourceElement
 	: functionDeclaration
         | ambientDeclaration
 	| statement
 	;
-	
-//TypeScript
-//*****************************************************************
-//  TypeScript additions
-//      - need to import JS into the TS grammar instead of putting here.
-//*****************************************************************
+
 ambientDeclaration
 	: 'declare' ambientModuleDeclaration
 	;
 	
 ambientModuleDeclaration
-	: 'module' Identifier '{' NEWLINE!* ambientModuleBody NEWLINE!* '}'
+	: 'module' IDENT '{' NEWLINE!* ambientModuleBody NEWLINE!* '}'
 	;
 	
 //TODO:: TESTING TEMPORARY until actual grammar is input.
 ambientModuleBody
-	: 'export' 'interface' Identifier ('extends' Identifier (',' Identifier)* )* NEWLINE!* '{' NEWLINE!* sourceElements NEWLINE!* '}'
+	: 'export' 'interface' IDENT ('extends' IDENT (',' IDENT)* )*? NEWLINE!* '{' NEWLINE!* ambientElements? NEWLINE!* '}'
 	;
 
+ambientElements
+        : ambientElement
+        ;
+
+ambientElement
+        : ( 'export' ambientVariableDeclaration )?
+        ;
+          
+ambientVariableDeclaration
+        : 'var' IDENT ':' typeAnnotation? ';'
+        ;
+
+typeAnnotation
+        : propertyName; //TODO:: Doesn't seem right, testing.
 
 //JavaScript
 //*****************************************************************
@@ -53,15 +74,15 @@ ambientModuleBody
 
 // functions
 functionDeclaration
-	: 'function' NEWLINE!* Identifier NEWLINE!* formalParameterList NEWLINE!* functionBody
+	: 'function' NEWLINE!* IDENT NEWLINE!* formalParameterList NEWLINE!* functionBody
 	;
 	
 functionExpression
-	: 'function' NEWLINE!* Identifier? NEWLINE!* formalParameterList NEWLINE!* functionBody
+	: 'function' NEWLINE!* IDENT? NEWLINE!* formalParameterList NEWLINE!* functionBody
 	;
 	
 formalParameterList
-	: '(' (NEWLINE!* Identifier (NEWLINE!* ',' NEWLINE!* Identifier)*)? NEWLINE!* ')'
+	: '(' (NEWLINE!* IDENT (NEWLINE!* ',' NEWLINE!* IDENT)*)? NEWLINE!* ')'
 	;
 
 functionBody
@@ -107,11 +128,11 @@ variableDeclarationListNoIn
 	;
 	
 variableDeclaration
-	: Identifier NEWLINE!* initialiser?
+	: IDENT NEWLINE!* initialiser?
 	;
 	
 variableDeclarationNoIn
-	: Identifier NEWLINE!* initialiserNoIn?
+	: IDENT NEWLINE!* initialiserNoIn?
 	;
 	
 initialiser
@@ -168,11 +189,11 @@ forInStatementInitialiserPart
 	;
 
 continueStatement
-	: 'continue' Identifier? (NEWLINE | ';')!
+	: 'continue' IDENT? (NEWLINE | ';')!
 	;
 
 breakStatement
-	: 'break' Identifier? (NEWLINE | ';')!
+	: 'break' IDENT? (NEWLINE | ';')!
 	;
 
 returnStatement
@@ -184,7 +205,7 @@ withStatement
 	;
 
 labelledStatement
-	: Identifier NEWLINE!* ':' NEWLINE!* statement
+	: IDENT NEWLINE!* ':' NEWLINE!* statement
 	;
 	
 switchStatement
@@ -212,7 +233,7 @@ tryStatement
 	;
        
 catchClause
-	: 'catch' NEWLINE!* '(' NEWLINE!* Identifier NEWLINE!* ')' NEWLINE!* statementBlock
+	: 'catch' NEWLINE!* '(' NEWLINE!* IDENT NEWLINE!* ')' NEWLINE!* statementBlock
 	;
 	
 finallyClause
@@ -276,7 +297,7 @@ indexSuffix
 	;	
 	
 propertyReferenceSuffix
-	: '.' NEWLINE!* Identifier
+	: '.' NEWLINE!* IDENT
 	;
 	
 assignmentOperator
@@ -370,7 +391,7 @@ postfixExpression
 
 primaryExpression
 	: 'this'
-	| Identifier
+	| IDENT
 	| literal
 	| arrayLiteral
 	| objectLiteral
@@ -392,9 +413,9 @@ propertyNameAndValue
 	;
 
 propertyName
-	: Identifier
-	| StringLiteral
-	| NumericLiteral
+	: IDENT
+	| STRING_LITERAL
+	| NUMERIC_LITERAL
 	;
 
 // primitive literal definition.
@@ -402,6 +423,6 @@ literal
 	: 'null'
 	| 'true'
 	| 'false'
-	| StringLiteral
-	| NumericLiteral
-	
+	| STRING_LITERAL
+	| NUMERIC_LITERAL
+        ;
