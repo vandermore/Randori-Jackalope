@@ -59,7 +59,7 @@ typeName
 
 moduleOrTypeName
         : IDENT
-        | moduleName '.' IDENT
+        | moduleOrTypeName '.' IDENT
         ;
 
 moduleName
@@ -137,8 +137,13 @@ functionSignature
 //
 // Array Type Literals
 //
-arrayType
-    : type '[' ']'
+arrayType //This isn't as defined in the spec, but it was mutually left-recursive in ANTLR4.
+          //I'd like to find a way to fix this so there is less duplicate code.
+    : predefinedType '[' ']'
+    | typeName '[' ']'
+    | objectType '[' ']'
+    | functionType '[' ']'
+    | constructorType '[' ']'
     ;
 
 //
@@ -200,7 +205,7 @@ variableDeclarationNoIn
 	;
 
 typeAnnotation
-        : propertyName //TODO:: Doesn't seem right, testing.
+        : ':' type
         ;
 
 //*****************************************************************
@@ -499,7 +504,7 @@ moduleReference
     ;
 
 externalModuleReference
-    : 'module' '(' stringLiteral ')'
+    : 'module' '(' STRING_LITERAL ')'
     ;
 
 //*****************************************************************
@@ -541,7 +546,7 @@ ambientClassBody
     ;
 
 ambientClassBodyElements
-    : ambientClassBodyElements
+    : ambientClassBodyElement
     | ambientClassBodyElements ambientClassBodyElement
     ;
 
@@ -574,7 +579,7 @@ ambientModuleDeclaration
 
 ambientModuleIdentification
     : identifierPath
-    | stringLiteral
+    | STRING_LITERAL
     ;
 
 ambientModuleBody
@@ -633,7 +638,7 @@ functionBody
 
 // statements
 statement
-	: statementBlock
+	: block
 	| variableStatement
 	| emptyStatement
 	| expressionStatement
@@ -649,7 +654,7 @@ statement
 	| tryStatement
 	;
 
-statementBlock
+block
 	: '{' NEWLINE!* statementList? NEWLINE!* '}'
 	;
 
@@ -772,15 +777,15 @@ throwStatement
 	;
 
 tryStatement
-	: 'try' NEWLINE!* statementBlock NEWLINE!* (finallyClause | catchClause (NEWLINE!* finallyClause)?)
+	: 'try' NEWLINE!* block NEWLINE!* (finallyClause | catchClause (NEWLINE!* finallyClause)?)
 	;
 
 catchClause
-	: 'catch' NEWLINE!* '(' NEWLINE!* IDENT NEWLINE!* ')' NEWLINE!* statementBlock
+	: 'catch' NEWLINE!* '(' NEWLINE!* IDENT NEWLINE!* ')' NEWLINE!* block
 	;
 
 finallyClause
-	: 'finally' NEWLINE!* statementBlock
+	: 'finally' NEWLINE!* block
 	;
 
 // expressions
