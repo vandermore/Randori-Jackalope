@@ -13,14 +13,8 @@ import JSLexerRules;
 //*****************************************************************
 
 program
-	: NEWLINE!* ambientElements? NEWLINE!* EOF!
+	: NEWLINE!* sourceElement? NEWLINE!* EOF!
 	;
-	
-/*
-program
-	: NEWLINE!* sourceElements NEWLINE!* EOF!
-	;
-*/
 
 sourceElements
 	: sourceElement (NEWLINE!* sourceElement)*
@@ -32,17 +26,66 @@ sourceElement
 	| statement
 	;
 
+//
+//TypeScript Module
+//
 ambientDeclaration
-	: 'declare' ambientModuleDeclaration
+        : 'declare' ambientVariableDeclaration
+        | 'declare' ambientFunctionDeclaration
+        | 'declare' ambientClassDeclaration
+        | 'declare' ambientModuleDeclaration
 	;
-	
+//
+//TypeScript Variables
+//
+ambientVariableDeclaration
+        : 'var' IDENT ':' typeAnnotation? ';'
+        ;
+
+//
+//TypeScript Functions
+//
+ambientFunctionDeclaration
+        : 'function' functionSignature ';'
+        ;
+
+//
+//TypeScript Class
+//
+ambientClassDeclaration
+        : 'class' IDENT classHeritage '{' ambientClassBody '}'
+        ;
+
+ambientClassBody
+    : ambientClassBodyElements?
+    ;
+
+ambientClassBodyElements
+    : ambientClassBodyElements
+    | ambientClassBodyElements ambientClassBodyElement
+    ;
+
+ambientClassBodyElement
+    : ambientConstructorDeclaration
+    | ambientMemberDeclaration
+    | ambientStaticDeclaration
+    ;
+
+ambientConstructorDeclaration
+    : 'constructor' '(' parameterList ')' ';'
+    ;
+
+ambientMemberDeclaration
+    : publicOrPrivate? IDENT typeAnnotation? ';'
+    | publicOrPrivate? functionSignature ';'
+    ;
+
 ambientModuleDeclaration
 	: 'module' IDENT '{' NEWLINE!* ambientModuleBody NEWLINE!* '}'
 	;
-	
-//TODO:: TESTING TEMPORARY until actual grammar is input.
+
 ambientModuleBody
-	: 'export' 'interface' IDENT ('extends' IDENT (',' IDENT)* )*? NEWLINE!* '{' NEWLINE!* ambientElements? NEWLINE!* '}'
+	: 'export' 'interface'? IDENT ('extends' IDENT (',' IDENT)* )*? NEWLINE!* '{' NEWLINE!* ambientElements? NEWLINE!* '}'
 	;
 
 ambientElements
@@ -52,13 +95,95 @@ ambientElements
 ambientElement
         : ( 'export' ambientVariableDeclaration )?
         ;
-          
-ambientVariableDeclaration
-        : 'var' IDENT ':' typeAnnotation? ';'
+
+ambientInterfaceDeclaration
+        : 'interface' IDENT 'extends' typeAnnotation? ';'
         ;
 
+//
+// Other Typescript grammar
+//
 typeAnnotation
         : propertyName; //TODO:: Doesn't seem right, testing.
+        ;
+
+functionSignature
+        : IDENT '?'? '(' parameterList ')' returnTypeAnnotation?
+        ;
+
+returnTypeAnnotation
+        : returnType
+        ;
+
+returnType
+        : type
+        | 'void'
+        ;
+
+parameterList
+	: '(' (NEWLINE!* IDENT (NEWLINE!* ',' NEWLINE!* IDENT)*)? NEWLINE!* ')'
+	;
+
+//
+// Types
+//
+type
+        : predefinedType
+        | typeName
+        | typeLiteral
+        ;
+
+predefinedType
+        : 'any'
+        | 'number'
+        | 'bool'
+        | 'string'
+        ;
+
+typeName
+        : moduleOrTypeName
+        ;
+
+moduleOrTypeName
+        : IDENT
+        | moduleName '.' IDENT
+        ;
+
+moduleName
+        : moduleOrTypeName
+        ;
+
+typeLiteral
+        : objectType
+        | arrayType
+        | functionType
+        | constructorType
+        ;
+
+//
+// Object Type Literals
+//
+objectType
+    : '{' typeBody '}'
+    ;
+
+typeBody
+    : typeMemberList?
+    | typeMemberList ';'
+    ;
+
+typeMemberList
+    : typeMember
+    | typeMemberList ';' typeMember
+    ;
+
+typeMember
+    : callSignature
+    | constructSignature
+    | indexSignature
+    | propertySignature
+    | functionSignature
+    ;
 
 //JavaScript
 //*****************************************************************
@@ -76,11 +201,11 @@ typeAnnotation
 functionDeclaration
 	: 'function' NEWLINE!* IDENT NEWLINE!* formalParameterList NEWLINE!* functionBody
 	;
-	
+
 functionExpression
 	: 'function' NEWLINE!* IDENT? NEWLINE!* formalParameterList NEWLINE!* functionBody
 	;
-	
+
 formalParameterList
 	: '(' (NEWLINE!* IDENT (NEWLINE!* ',' NEWLINE!* IDENT)*)? NEWLINE!* ')'
 	;
@@ -106,83 +231,83 @@ statement
 	| throwStatement
 	| tryStatement
 	;
-	
+
 statementBlock
 	: '{' NEWLINE!* statementList? NEWLINE!* '}'
 	;
-	
+
 statementList
 	: statement (NEWLINE!* statement)*
 	;
-	
+
 variableStatement
 	: 'var' NEWLINE!* variableDeclarationList (NEWLINE | ';')!
 	;
-	
+
 variableDeclarationList
 	: variableDeclaration (NEWLINE!* ',' NEWLINE!* variableDeclaration)*
 	;
-	
+
 variableDeclarationListNoIn
 	: variableDeclarationNoIn (NEWLINE!* ',' NEWLINE!* variableDeclarationNoIn)*
 	;
-	
+
 variableDeclaration
 	: IDENT NEWLINE!* initialiser?
 	;
-	
+
 variableDeclarationNoIn
 	: IDENT NEWLINE!* initialiserNoIn?
 	;
-	
+
 initialiser
 	: '=' NEWLINE!* assignmentExpression
 	;
-	
+
 initialiserNoIn
 	: '=' NEWLINE!* assignmentExpressionNoIn
 	;
-	
+
 emptyStatement
 	: ';'
 	;
-	
+
 expressionStatement
 	: expression (NEWLINE | ';')!
 	;
-	
+
 ifStatement
 	: 'if' NEWLINE!* '(' NEWLINE!* expression NEWLINE!* ')' NEWLINE!* statement (NEWLINE!* 'else' NEWLINE!* statement)?
 	;
-	
+
 iterationStatement
 	: doWhileStatement
 	| whileStatement
 	| forStatement
 	| forInStatement
 	;
-	
+
 doWhileStatement
 	: 'do' NEWLINE!* statement NEWLINE!* 'while' NEWLINE!* '(' expression ')' (NEWLINE | ';')!
 	;
-	
+
 whileStatement
 	: 'while' NEWLINE!* '(' NEWLINE!* expression NEWLINE!* ')' NEWLINE!* statement
 	;
-	
+
 forStatement
 	: 'for' NEWLINE!* '(' (NEWLINE!* forStatementInitialiserPart)? NEWLINE!* ';' (NEWLINE!* expression)? NEWLINE!* ';' (NEWLINE!* expression)? NEWLINE!* ')' NEWLINE!* statement
 	;
-	
+
 forStatementInitialiserPart
 	: expressionNoIn
 	| 'var' NEWLINE!* variableDeclarationListNoIn
 	;
-	
+
 forInStatement
 	: 'for' NEWLINE!* '(' NEWLINE!* forInStatementInitialiserPart NEWLINE!* 'in' NEWLINE!* expression NEWLINE!* ')' NEWLINE!* statement
 	;
-	
+
 forInStatementInitialiserPart
 	: leftHandSideExpression
 	| 'var' NEWLINE!* variableDeclarationNoIn
@@ -199,7 +324,7 @@ breakStatement
 returnStatement
 	: 'return' expression? (NEWLINE | ';')!
 	;
-	
+
 withStatement
 	: 'with' NEWLINE!* '(' NEWLINE!* expression NEWLINE!* ')' NEWLINE!* statement
 	;
@@ -207,11 +332,11 @@ withStatement
 labelledStatement
 	: IDENT NEWLINE!* ':' NEWLINE!* statement
 	;
-	
+
 switchStatement
 	: 'switch' NEWLINE!* '(' NEWLINE!* expression NEWLINE!* ')' NEWLINE!* caseBlock
 	;
-	
+
 caseBlock
 	: '{' (NEWLINE!* caseClause)* (NEWLINE!* defaultClause (NEWLINE!* caseClause)*)? NEWLINE!* '}'
 	;
@@ -219,11 +344,11 @@ caseBlock
 caseClause
 	: 'case' NEWLINE!* expression NEWLINE!* ':' NEWLINE!* statementList?
 	;
-	
+
 defaultClause
 	: 'default' NEWLINE!* ':' NEWLINE!* statementList?
 	;
-	
+
 throwStatement
 	: 'throw' expression (NEWLINE | ';')!
 	;
@@ -231,11 +356,11 @@ throwStatement
 tryStatement
 	: 'try' NEWLINE!* statementBlock NEWLINE!* (finallyClause | catchClause (NEWLINE!* finallyClause)?)
 	;
-       
+
 catchClause
 	: 'catch' NEWLINE!* '(' NEWLINE!* IDENT NEWLINE!* ')' NEWLINE!* statementBlock
 	;
-	
+
 finallyClause
 	: 'finally' NEWLINE!* statementBlock
 	;
@@ -244,35 +369,35 @@ finallyClause
 expression
 	: assignmentExpression (NEWLINE!* ',' NEWLINE!* assignmentExpression)*
 	;
-	
+
 expressionNoIn
 	: assignmentExpressionNoIn (NEWLINE!* ',' NEWLINE!* assignmentExpressionNoIn)*
 	;
-	
+
 assignmentExpression
 	: conditionalExpression
 	| leftHandSideExpression NEWLINE!* assignmentOperator NEWLINE!* assignmentExpression
 	;
-	
+
 assignmentExpressionNoIn
 	: conditionalExpressionNoIn
 	| leftHandSideExpression NEWLINE!* assignmentOperator NEWLINE!* assignmentExpressionNoIn
 	;
-	
+
 leftHandSideExpression
 	: callExpression
 	| newExpression
 	;
-	
+
 newExpression
 	: memberExpression
 	| 'new' NEWLINE!* newExpression
 	;
-	
+
 memberExpression
 	: (primaryExpression | functionExpression | 'new' NEWLINE!* memberExpression NEWLINE!* arguments) (NEWLINE!* memberExpressionSuffix)*
 	;
-	
+
 memberExpressionSuffix
 	: indexSuffix
 	| propertyReferenceSuffix
@@ -281,7 +406,7 @@ memberExpressionSuffix
 callExpression
 	: memberExpression NEWLINE!* arguments (NEWLINE!* callExpressionSuffix)*
 	;
-	
+
 callExpressionSuffix
 	: arguments
 	| indexSuffix
@@ -291,15 +416,15 @@ callExpressionSuffix
 arguments
 	: '(' (NEWLINE!* assignmentExpression (NEWLINE!* ',' NEWLINE!* assignmentExpression)*)? NEWLINE!* ')'
 	;
-	
+
 indexSuffix
 	: '[' NEWLINE!* expression NEWLINE!* ']'
-	;	
-	
+	;
+
 propertyReferenceSuffix
 	: '.' NEWLINE!* IDENT
 	;
-	
+
 assignmentOperator
 	: '=' | '*=' | '/=' | '%=' | '+=' | '-=' | '<<=' | '>>=' | '>>>=' | '&=' | '^=' | '|='
 	;
@@ -315,43 +440,43 @@ conditionalExpressionNoIn
 logicalORExpression
 	: logicalANDExpression (NEWLINE!* '||' NEWLINE!* logicalANDExpression)*
 	;
-	
+
 logicalORExpressionNoIn
 	: logicalANDExpressionNoIn (NEWLINE!* '||' NEWLINE!* logicalANDExpressionNoIn)*
 	;
-	
+
 logicalANDExpression
 	: bitwiseORExpression (NEWLINE!* '&&' NEWLINE!* bitwiseORExpression)*
 	;
-	
+
 logicalANDExpressionNoIn
 	: bitwiseORExpressionNoIn (NEWLINE!* '&&' NEWLINE!* bitwiseORExpressionNoIn)*
 	;
-	
+
 bitwiseORExpression
 	: bitwiseXORExpression (NEWLINE!* '|' NEWLINE!* bitwiseXORExpression)*
 	;
-	
+
 bitwiseORExpressionNoIn
 	: bitwiseXORExpressionNoIn (NEWLINE!* '|' NEWLINE!* bitwiseXORExpressionNoIn)*
 	;
-	
+
 bitwiseXORExpression
 	: bitwiseANDExpression (NEWLINE!* '^' NEWLINE!* bitwiseANDExpression)*
 	;
-	
+
 bitwiseXORExpressionNoIn
 	: bitwiseANDExpressionNoIn (NEWLINE!* '^' NEWLINE!* bitwiseANDExpressionNoIn)*
 	;
-	
+
 bitwiseANDExpression
 	: equalityExpression (NEWLINE!* '&' NEWLINE!* equalityExpression)*
 	;
-	
+
 bitwiseANDExpressionNoIn
 	: equalityExpressionNoIn (NEWLINE!* '&' NEWLINE!* equalityExpressionNoIn)*
 	;
-	
+
 equalityExpression
 	: relationalExpression (NEWLINE!* ('==' | '!=' | '===' | '!==') NEWLINE!* relationalExpression)*
 	;
@@ -359,7 +484,7 @@ equalityExpression
 equalityExpressionNoIn
 	: relationalExpressionNoIn (NEWLINE!* ('==' | '!=' | '===' | '!==') NEWLINE!* relationalExpressionNoIn)*
 	;
-	
+
 relationalExpression
 	: shiftExpression (NEWLINE!* ('<' | '>' | '<=' | '>=' | 'instanceof' | 'in') NEWLINE!* shiftExpression)*
 	;
@@ -384,7 +509,7 @@ unaryExpression
 	: postfixExpression
 	| ('delete' | 'void' | 'typeof' | '++' | '--' | '+' | '-' | '~' | '!') unaryExpression
 	;
-	
+
 postfixExpression
 	: leftHandSideExpression ('++' | '--')?
 	;
@@ -397,17 +522,17 @@ primaryExpression
 	| objectLiteral
 	| '(' NEWLINE!* expression NEWLINE!* ')'
 	;
-	
+
 // arrayLiteral definition.
 arrayLiteral
 	: '[' NEWLINE!* assignmentExpression? (NEWLINE!* ',' (NEWLINE!* assignmentExpression)?)* NEWLINE!* ']'
 	;
-       
+
 // objectLiteral definition.
 objectLiteral
 	: '{' NEWLINE!* propertyNameAndValue (NEWLINE!* ',' NEWLINE!* propertyNameAndValue)* NEWLINE!* '}'
 	;
-	
+
 propertyNameAndValue
 	: propertyName NEWLINE!* ':' NEWLINE!* assignmentExpression
 	;
