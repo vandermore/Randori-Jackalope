@@ -1,7 +1,3 @@
-    /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 grammar TypeScript;
 import JSLexerRules;
 
@@ -10,8 +6,20 @@ import JSLexerRules;
 //  TypeScript Declaration additions
 //      - Only defining items related to Declaration Source Files
 //          since I am only parsing '.d.ts' files.
+//
+//  TODO:: Need to include newlines and other whitespace if needed.
+//
+// Order (TODO)
+//      Types
+//      Expressions
+//      Statements
+//      Functions
+//      Interfaces
+//      Classes
+//      Programs and Modules
+//      Ambients
+//      Declaration Source Files
 //*****************************************************************
-
 program
 	: NEWLINE!* sourceElement? NEWLINE!* EOF!
 	;
@@ -29,104 +37,9 @@ sourceElement
 //
 //TypeScript Module
 //
-ambientDeclaration
-        : 'declare' ambientVariableDeclaration
-        | 'declare' ambientFunctionDeclaration
-        | 'declare' ambientClassDeclaration
-        | 'declare' ambientModuleDeclaration
-	;
-//
-//TypeScript Variables
-//
-ambientVariableDeclaration
-        : 'var' IDENT ':' typeAnnotation? ';'
-        ;
-
-//
-//TypeScript Functions
-//
-ambientFunctionDeclaration
-        : 'function' functionSignature ';'
-        ;
-
-//
-//TypeScript Class
-//
-ambientClassDeclaration
-        : 'class' IDENT classHeritage '{' ambientClassBody '}'
-        ;
-
-ambientClassBody
-    : ambientClassBodyElements?
-    ;
-
-ambientClassBodyElements
-    : ambientClassBodyElements
-    | ambientClassBodyElements ambientClassBodyElement
-    ;
-
-ambientClassBodyElement
-    : ambientConstructorDeclaration
-    | ambientMemberDeclaration
-    | ambientStaticDeclaration
-    ;
-
-ambientConstructorDeclaration
-    : 'constructor' '(' parameterList ')' ';'
-    ;
-
-ambientMemberDeclaration
-    : publicOrPrivate? IDENT typeAnnotation? ';'
-    | publicOrPrivate? functionSignature ';'
-    ;
-
-ambientModuleDeclaration
-	: 'module' IDENT '{' NEWLINE!* ambientModuleBody NEWLINE!* '}'
-	;
-
-ambientModuleBody
-	: 'export' 'interface'? IDENT ('extends' IDENT (',' IDENT)* )*? NEWLINE!* '{' NEWLINE!* ambientElements? NEWLINE!* '}'
-	;
-
-ambientElements
-        : ambientElement
-        ;
-
-ambientElement
-        : ( 'export' ambientVariableDeclaration )?
-        ;
-
-ambientInterfaceDeclaration
-        : 'interface' IDENT 'extends' typeAnnotation? ';'
-        ;
-
-//
-// Other Typescript grammar
-//
-typeAnnotation
-        : propertyName; //TODO:: Doesn't seem right, testing.
-        ;
-
-functionSignature
-        : IDENT '?'? '(' parameterList ')' returnTypeAnnotation?
-        ;
-
-returnTypeAnnotation
-        : returnType
-        ;
-
-returnType
-        : type
-        | 'void'
-        ;
-
-parameterList
-	: '(' (NEWLINE!* IDENT (NEWLINE!* ',' NEWLINE!* IDENT)*)? NEWLINE!* ')'
-	;
-
-//
-// Types
-//
+//*****************************************************************
+//      Types
+//*****************************************************************
 type
         : predefinedType
         | typeName
@@ -185,6 +98,514 @@ typeMember
     | functionSignature
     ;
 
+//
+// Call Signatures
+//
+callSignature
+    : '(' parameterList? ')' returnTypeAnnotation?
+    ;
+
+//
+// Construct Signature
+//
+constructSignature
+    : 'new' '(' parameterList? ')' typeAnnotation?
+    ;
+
+//
+// Index Signatures
+//
+indexSignature
+    : '[' requiredParameter ']' typeAnnotation?
+    ;
+
+//
+// Property Signatures
+//
+propertySignature
+    : IDENT '?'? typeAnnotation?
+    ;
+
+//
+// Function Signatures
+//
+functionSignature
+    : IDENT '?'? '(' parameterList ')' returnTypeAnnotation?
+    | IDENT '(' parameterList? ')' returnTypeAnnotation?
+    ;
+
+//
+// Array Type Literals
+//
+arrayType
+    : type '[' ']'
+    ;
+
+//
+// Function Type Literals
+//
+functionType
+    : '(' parameterList? ')' '=>' returnType
+    ;
+
+//
+// Constructor Type Literals
+//
+constructorType
+    : 'new' '(' parameterList? ')' '=>' type
+    ;
+
+//*****************************************************************
+//      Expressions
+//*****************************************************************
+//
+// Function Expressions
+//
+functionExpression //Modified from base JavaScript implementation for TS
+	: 'function' NEWLINE!* IDENT? NEWLINE!* callSignature NEWLINE!* '{' functionBody '}'
+	;
+
+assignmentExpression //Modified to add in arrowFunctionExpression for TS
+	: conditionalExpression
+	| leftHandSideExpression NEWLINE!* assignmentOperator NEWLINE!* assignmentExpression
+        | arrowFunctionExpression
+	;
+
+arrowFunctionExpression
+    : arrowFormalParameters '=>' block
+    | arrowFormalParameters '=>' assignmentExpression
+    ;
+
+arrowFormalParameters
+    : callSignature
+    | IDENT
+    ;
+
+unaryExpression //Modified to add in < Type > for TS
+	: postfixExpression
+	| ('delete' | 'void' | 'typeof' | '++' | '--' | '+' | '-' | '~' | '!') unaryExpression
+        | '<' type '>'
+	;
+
+
+//*****************************************************************
+//      Statements
+//*****************************************************************
+variableDeclaration //Modified for TS
+	: IDENT NEWLINE!* typeAnnotation? initialiser?
+	;
+
+variableDeclarationNoIn
+	: IDENT NEWLINE!* typeAnnotation? initialiserNoIn?
+	;
+
+typeAnnotation
+        : propertyName //TODO:: Doesn't seem right, testing.
+        ;
+
+//*****************************************************************
+//      Functions
+//*****************************************************************
+//
+//Function Declarations
+//
+functionDeclaration //Modified for TS
+    : functionOverloads? functionImplementation
+    ;
+
+functionOverloads
+    : functionOverload
+    | functionOverloads functionOverload
+    ;
+
+functionOverload
+    : 'function' functionSignature ';'
+    ;
+
+functionImplementation
+    : 'function' functionSignature '{' functionBody '}'
+    ;
+
+//
+// Function Signatures
+//
+//Was duplicate, moved as an | to earlier definition.
+//functionSignature
+//    : IDENT '(' parameterList? ')' returnTypeAnnotation?
+//    ;
+    
+parameterList
+    : requiredParameterList
+    | optionalParameterList
+    | restParameter
+    | requiredParameterList ',' optionalParameterList
+    | requiredParameterList ',' restParameter
+    | optionalParameterList ',' restParameter
+    | requiredParameterList ',' optionalParameterList ',' restParameter
+    ;
+
+requiredParameterList
+    : requiredParameter
+    | requiredParameterList ',' requiredParameter
+    ;
+
+requiredParameter
+    : publicOrPrivate? IDENT typeAnnotation?
+    ;
+
+publicOrPrivate
+    : 'public'
+    | 'private'
+    ;
+
+optionalParameterList
+    : optionalParameter
+    | optionalParameterList ',' optionalParameter
+    ;
+
+optionalParameter
+    : publicOrPrivate? IDENT '?' typeAnnotation?
+    | publicOrPrivate? IDENT typeAnnotation? initialiser
+    ;
+
+restParameter
+    : '...' requiredParameter
+    ;
+
+returnTypeAnnotation
+    : ':' returnType
+    ;
+
+returnType
+    : type
+    | 'void'
+    ;
+
+//
+// Function Implementations
+//
+//Dupe
+//functionImplementation
+//    : 'function' functionSignature '{' functionBody '}'
+//    ;
+
+//*****************************************************************
+//      Interfaces
+//*****************************************************************
+//
+// Interface Declarations
+//
+interfaceDeclaration
+    : 'interface' IDENT interfaceExtendsClause? objectType
+    ;
+
+interfaceExtendsClause
+    : 'extends' interfaceNameList
+    ;
+
+interfaceNameList
+    : interfaceName
+    | interfaceNameList ',' interfaceName
+    ;
+
+interfaceName
+    : typeName
+    ;
+
+//*****************************************************************
+//      Classes
+//*****************************************************************
+classDeclaration
+    : 'class' IDENT classHeritage '{' classBody '}'
+    ;
+
+//
+// Class Heritage Specification
+//
+classHeritage
+    : classExtendsClause? implementsClause?
+    ;
+
+classExtendsClause
+    : 'extends' className
+    ;
+
+className
+    : typeName
+    ;
+
+implementsClause
+    : 'implements' interfaceNameList
+    ;
+
+//
+// Class Body
+//
+classBody
+    : classElements?
+    ;
+
+classElements
+    : classElement
+    | classElements classElement
+    ;
+
+classElement
+    : constructorDeclaration
+    | memberDeclaration
+    ;
+
+//
+// Constructor Declarations
+//
+constructorDeclaration
+    : constructorOverloads? constructorImplementation
+    ;
+
+constructorOverloads
+    : constructorOverload
+    | constructorOverloads constructorOverloads
+    ;
+
+constructorOverload
+    : 'constructor' '(' parameterList? ')' ';'
+    ;
+
+constructorImplementation
+    : 'constructor' '(' parameterList ')' '{' functionBody '}'
+    ;
+
+//
+// Member Declarations
+//
+memberDeclaration
+    : memberVariableDeclaration
+    | memberFunctionDeclaration
+    | memberAccessorDeclaration
+    ;
+
+//
+// Member Variable Declarations
+//
+memberVariableDeclaration
+    : publicOrPrivate? 'static'? variableDeclaration ';'
+    ;
+
+//
+// Member Function Declarations
+//
+memberFunctionDeclaration
+    : memberFunctionOverloads? memberFunctionImplementation
+    ;
+
+memberFunctionOverloads
+    : memberFunctionOverload
+    | memberFunctionOverloads memberFunctionOverload
+    ;
+
+memberFunctionOverload
+    : publicOrPrivate? 'static'? functionSignature
+    ;
+
+memberFunctionImplementation
+    : publicOrPrivate? 'static'? functionSignature '{' functionBody '}'
+    ;
+
+//
+// Member Accessor Declarations
+//
+memberAccessorDeclaration
+    : publicOrPrivate? getAccessorSignature '{' functionBody '}'
+    | publicOrPrivate? setAccessorSignature '{' functionBody '}'
+    ;
+
+getAccessorSignature
+    : 'get' IDENT '(' ')' returnTypeAnnotation?
+    ;
+
+setAccessorSignature
+    : 'set' IDENT '(' requiredParameter ')'
+    ;
+
+//*****************************************************************
+//      Programs and Modules
+//*****************************************************************
+//
+//Programs
+//
+sourceFile
+    : implementationSourceFile
+    | declarationSourceFile
+    ;
+
+implementationSourceFile
+    : moduleElements?
+    ;
+
+moduleElements
+    : moduleElement
+    | moduleElements moduleElement
+    ;
+
+moduleElement
+    : statement
+    | functionDeclaration
+    | classDeclaration
+    | interfaceDeclaration
+    | moduleDeclaration
+    | importDeclaration
+    | exportDeclaration
+    | ambientDeclaration
+    ;
+
+//
+// Module Declarations
+//
+moduleDeclaration
+    : 'module' identifierPath? '{' moduleBody '}'
+    ;
+
+identifierPath
+    : IDENT
+    | identifierPath '.' IDENT
+    ;
+
+moduleBody
+    : moduleElements?
+    ;
+
+//
+// Export Declarations
+//
+exportDeclaration
+    : 'export' variableStatement
+    | 'export' functionDeclaration
+    | 'export' classDeclaration
+    | 'export' interfaceDeclaration
+    | 'export' moduleDeclaration
+    | 'export' ambientDeclaration
+    ;
+
+//
+// Import Declarations
+//
+importDeclaration
+    : 'import' IDENT '=' moduleReference ';'
+    ;
+
+moduleReference
+    : externalModuleReference
+    | moduleName
+    ;
+
+externalModuleReference
+    : 'module' '(' stringLiteral ')'
+    ;
+
+//*****************************************************************
+//      Ambients
+//*****************************************************************
+//
+// Ambient Declarations
+//
+ambientDeclaration
+        : 'declare' ambientVariableDeclaration
+        | 'declare' ambientFunctionDeclaration
+        | 'declare' ambientClassDeclaration
+        | 'declare' ambientModuleDeclaration
+	;
+
+//
+// Ambient Variable Declarations
+//
+ambientVariableDeclaration
+        : 'var' IDENT ':' typeAnnotation? ';'
+        ;
+
+//
+// Ambient Function Declarations
+//
+ambientFunctionDeclaration
+        : 'function' functionSignature ';'
+        ;
+
+//
+// Ambient Class Declarations
+//
+ambientClassDeclaration
+        : 'class' IDENT classHeritage '{' ambientClassBody '}'
+        ;
+
+ambientClassBody
+    : ambientClassBodyElements?
+    ;
+
+ambientClassBodyElements
+    : ambientClassBodyElements
+    | ambientClassBodyElements ambientClassBodyElement
+    ;
+
+ambientClassBodyElement
+    : ambientConstructorDeclaration
+    | ambientMemberDeclaration
+    | ambientStaticDeclaration
+    ;
+
+ambientConstructorDeclaration
+    : 'constructor' '(' parameterList ')' ';'
+    ;
+
+ambientMemberDeclaration
+    : publicOrPrivate? IDENT typeAnnotation? ';'
+    | publicOrPrivate? functionSignature ';'
+    ;
+
+ambientStaticDeclaration
+    : 'static' IDENT typeAnnotation? ';'
+    | 'static' functionSignature ';'
+    ;
+
+//
+// Ambient Module Declarations
+//
+ambientModuleDeclaration
+	: 'module' ambientModuleIdentification '{' ambientModuleBody '}'
+	;
+
+ambientModuleIdentification
+    : identifierPath
+    | stringLiteral
+    ;
+
+ambientModuleBody
+	: ambientElements?
+	;
+
+ambientElements
+        : ambientElement
+        | ambientElements ambientElement
+        ;
+
+ambientElement
+        : 'export'? ambientVariableDeclaration
+        | 'export'? ambientFunctionDeclaration
+        | 'export'? ambientClassDeclaration
+        | 'export'? interfaceDeclaration
+        | 'export'? ambientModuleDeclaration
+        | importDeclaration
+        ;
+
+//
+// Declaration Source Files
+//
+declarationSourceFile
+    : ambientElements?
+    ;
+
+////
+// THIS IS OLDER AND JS, WE MAY NOT NEED IT FOR .d.ts FILES.
+////
+
 //JavaScript
 //*****************************************************************
 //  Since TypeScript is built on top of JS, we can use a JS
@@ -198,13 +619,9 @@ typeMember
 */
 
 // functions
-functionDeclaration
-	: 'function' NEWLINE!* IDENT NEWLINE!* formalParameterList NEWLINE!* functionBody
-	;
-
-functionExpression
-	: 'function' NEWLINE!* IDENT? NEWLINE!* formalParameterList NEWLINE!* functionBody
-	;
+//functionDeclaration
+//	: 'function' NEWLINE!* IDENT NEWLINE!* formalParameterList NEWLINE!* functionBody
+//	;
 
 formalParameterList
 	: '(' (NEWLINE!* IDENT (NEWLINE!* ',' NEWLINE!* IDENT)*)? NEWLINE!* ')'
@@ -252,13 +669,14 @@ variableDeclarationListNoIn
 	: variableDeclarationNoIn (NEWLINE!* ',' NEWLINE!* variableDeclarationNoIn)*
 	;
 
-variableDeclaration
-	: IDENT NEWLINE!* initialiser?
-	;
-
-variableDeclarationNoIn
-	: IDENT NEWLINE!* initialiserNoIn?
-	;
+//Modified for TS - see above
+//variableDeclaration
+//	: IDENT NEWLINE!* initialiser?
+//	;
+//
+//variableDeclarationNoIn
+//	: IDENT NEWLINE!* initialiserNoIn?
+//	;
 
 initialiser
 	: '=' NEWLINE!* assignmentExpression
@@ -374,10 +792,11 @@ expressionNoIn
 	: assignmentExpressionNoIn (NEWLINE!* ',' NEWLINE!* assignmentExpressionNoIn)*
 	;
 
-assignmentExpression
-	: conditionalExpression
-	| leftHandSideExpression NEWLINE!* assignmentOperator NEWLINE!* assignmentExpression
-	;
+//Modified for TypeScript - above
+//assignmentExpression
+//	: conditionalExpression
+//	| leftHandSideExpression NEWLINE!* assignmentOperator NEWLINE!* assignmentExpression
+//	;
 
 assignmentExpressionNoIn
 	: conditionalExpressionNoIn
@@ -505,10 +924,11 @@ multiplicativeExpression
 	: unaryExpression (NEWLINE!* ('*' | '/' | '%') NEWLINE!* unaryExpression)*
 	;
 
-unaryExpression
-	: postfixExpression
-	| ('delete' | 'void' | 'typeof' | '++' | '--' | '+' | '-' | '~' | '!') unaryExpression
-	;
+// Modified for TS - see above
+//unaryExpression
+//	: postfixExpression
+//	| ('delete' | 'void' | 'typeof' | '++' | '--' | '+' | '-' | '~' | '!') unaryExpression
+//	;
 
 postfixExpression
 	: leftHandSideExpression ('++' | '--')?
