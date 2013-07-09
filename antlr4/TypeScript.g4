@@ -729,6 +729,11 @@ variableDeclarationList
     | variableDeclarationList ',' variableDeclaration
     ;
 
+variableDeclarationListNoIn
+    : variableDeclarationNoIn
+    | variableDeclarationListNoIn ',' variableDeclarationNoIn
+    ;
+
 logicalORExpression
     : logicalANDExpression
     | logicalORExpression '||' logicalANDExpression
@@ -800,9 +805,61 @@ memberExpression
     | 'new' memberExpression arguments
     ;
 
+primaryExpression
+	: 'this'
+	| IDENT
+	| literal
+	| arrayLiteral
+	| objectLiteral
+	| '(' expression ')'
+	;
+
+literal
+	: nullLiteral
+	| booleanLiteral
+	| NUMERIC_LITERAL
+	| STRING_LITERAL
+      //Omitting regularExpressionLiteral for now
+        ;
+
+nullLiteral
+    : 'null'
+    ;
+
+booleanLiteral
+    : 'true'
+    | 'false'
+    ;
+
+arrayLiteral
+    : '[' elision? ']'
+    | '[' elementList ']'
+    | '[' elementList ',' elision? ']'
+    ;
+
+elementList
+    : elision? assignmentExpression
+    | elementList ',' elision? assignmentExpression
+    ;
+
+elision
+    : ','
+    | elision ','
+    ;
+
+objectLiteral
+    :
+    ;
+
+
 expression
     : assignmentExpression
     | expression ',' assignmentExpression
+    ;
+
+expressionNoIn
+    : assignmentExpressionNoIn
+    | expressionNoIn ',' assignmentExpressionNoIn
     ;
 
 assignmentExpressionNoIn
@@ -823,6 +880,38 @@ logicalORExpressionNoIn
 logicalANDExpressionNoIn
     : bitwiseORExpressionNoIn
     | logicalANDExpressionNoIn '&&' bitwiseORExpressionNoIn
+    ;
+
+bitwiseORExpressionNoIn
+    : bitwiseXORExpressionNoIn
+    | bitwiseORExpressionNoIn '|' bitwiseXORExpressionNoIn
+    ;
+
+bitwiseXORExpressionNoIn
+    : bitwiseANDExpressionNoIn
+    | bitwiseXORExpressionNoIn '^' bitwiseANDExpressionNoIn
+    ;
+
+bitwiseANDExpressionNoIn
+    : equalityExpressionNoIn
+    | bitwiseANDExpressionNoIn '&' equalityExpressionNoIn
+    ;
+
+equalityExpressionNoIn
+    : relationalExpressionNoIn
+    | equalityExpressionNoIn '==' relationalExpressionNoIn
+    | equalityExpressionNoIn '!=' relationalExpressionNoIn
+    | equalityExpressionNoIn '===' relationalExpressionNoIn
+    | equalityExpressionNoIn '!==' relationalExpressionNoIn
+    ;
+
+relationalExpressionNoIn
+    : shiftExpression
+    | relationalExpressionNoIn '<' shiftExpression
+    | relationalExpressionNoIn '>' shiftExpression
+    | relationalExpressionNoIn '<=' shiftExpression
+    | relationalExpressionNoIn '>=' shiftExpression
+    | relationalExpressionNoIn 'instanceof' shiftExpression
     ;
 
 emptyStatement
@@ -912,14 +1001,7 @@ debuggerStatement
     : 'debugger' ';'
     ;
 
-/*
-primaryExpression
-
-expressionNoIn
-
-variableDeclarationListNoIn
-*/
-    
+   
 ////
 // THIS IS OLDER AND JS, WE MAY NOT NEED IT FOR .d.ts FILES.
 ////
