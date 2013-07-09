@@ -31,7 +31,7 @@ sourceElements
 sourceElement
 	: functionDeclaration
         | ambientDeclaration
-	| statement
+//	| statement
 	;
 
 //
@@ -186,11 +186,26 @@ arrowFormalParameters
     | IDENT
     ;
 
+//unaryExpression 
+//	: postfixExpression
+//	| ('delete' | 'void' | 'typeof' | '++' | '--' | '+' | '-' | '~' | '!') unaryExpression
+//        | '<' type '>'
+//	;
+
 unaryExpression //Modified to add in < Type > for TS
-	: postfixExpression
-	| ('delete' | 'void' | 'typeof' | '++' | '--' | '+' | '-' | '~' | '!') unaryExpression
-        | '<' type '>'
-	;
+    : postfixExpression
+    | 'delete' unaryExpression
+    | 'void' unaryExpression
+    | 'typeof' unaryExpression
+    | '++' unaryExpression
+    | '--' unaryExpression
+    | '+' unaryExpression
+    | '-' unaryExpression
+    | '~' unaryExpression
+    | '!' unaryExpression
+    | '<' type '>'
+    ;
+
 
 
 //*****************************************************************
@@ -607,6 +622,304 @@ declarationSourceFile
     : ambientElements?
     ;
 
+
+//*********************************************************
+// JavaScript Grammar
+//      Grammar from Annotaded ES5
+//      http://es5.github.io
+//*********************************************************
+functionBody
+    : sourceElements?
+    ;
+
+conditionalExpression
+    : logicalORExpression
+    | logicalORExpression '?' assignmentExpression ':' assignmentExpression
+    ;
+
+block
+	: '{' statementList? '}'
+	;
+
+leftHandSideExpression
+    : newExpression
+    | callExpression
+    ;
+
+newExpression
+    : memberExpression
+    | 'new' newExpression
+    ;
+
+callExpression
+    : memberExpression arguments
+    | callExpression arguments
+    | callExpression '[' expression ']'
+    | callExpression '.' IDENT
+    ;
+
+arguments
+    : '(' ')'
+    | '(' argumentList ')'
+    ;
+
+argumentList
+    : assignmentExpression
+    | argumentList ',' assignmentExpression
+    ;
+
+assignmentOperator
+    : '='
+    | '*='
+    | '/='
+    | '%='
+    | '+='
+    | '-='
+    | '<<='
+    | '>>='
+    | '>>>='
+    | '&='
+    | '^='
+    | '|='
+    ;
+
+postfixExpression
+    : leftHandSideExpression
+    | leftHandSideExpression NEWLINE!* '++'
+    | leftHandSideExpression NEWLINE!* '--'
+    ;
+
+initialiser
+	: '=' assignmentExpression
+	;
+
+initialiserNoIn
+	: '=' assignmentExpressionNoIn
+	;
+
+statementList
+    : statement
+    | statementList statement
+    ;
+
+statement
+    : block
+    | variableStatement
+    | emptyStatement
+    | expressionStatement
+    | ifStatement
+    | iterationStatement
+    | continueStatement
+    | breakStatement
+    | returnStatement
+    | withStatement
+    | labelledStatement
+    | switchStatement
+    | throwStatement
+    | tryStatement
+    | debuggerStatement
+    ;
+
+variableStatement
+    : 'var' variableDeclarationList ';'
+    ;
+
+variableDeclarationList
+    : variableDeclaration
+    | variableDeclarationList ',' variableDeclaration
+    ;
+
+logicalORExpression
+    : logicalANDExpression
+    | logicalORExpression '||' logicalANDExpression
+    ;
+
+logicalANDExpression
+    : bitwiseORExpression
+    | logicalANDExpression '&&' bitwiseORExpression
+    ;
+
+bitwiseORExpression
+    : bitwiseXORExpression
+    | bitwiseORExpression '|' bitwiseXORExpression
+    ;
+
+bitwiseXORExpression
+    : bitwiseANDExpression
+    | bitwiseXORExpression '^' bitwiseANDExpression
+    ;
+
+bitwiseANDExpression
+    : equalityExpression
+    | bitwiseANDExpression '&' equalityExpression
+    ;
+
+equalityExpression
+    : relationalExpression
+    | equalityExpression '==' relationalExpression
+    | equalityExpression '!=' relationalExpression
+    | equalityExpression '===' relationalExpression
+    | equalityExpression '!==' relationalExpression
+    ;
+      
+relationalExpression
+    : shiftExpression
+    | relationalExpression '<' shiftExpression
+    | relationalExpression '>' shiftExpression
+    | relationalExpression '<=' shiftExpression
+    | relationalExpression '>=' shiftExpression
+    | relationalExpression 'instanceof' shiftExpression
+    | relationalExpression 'in' shiftExpression
+    ;
+
+shiftExpression
+    : additiveExpression
+    | shiftExpression '<<' additiveExpression
+    | shiftExpression '>>' additiveExpression
+    | shiftExpression '>>>' additiveExpression
+    ;
+
+additiveExpression
+    : multiplicativeExpression
+    | additiveExpression '+' multiplicativeExpression
+    | additiveExpression '-' multiplicativeExpression
+    ;  
+
+multiplicativeExpression
+    : unaryExpression
+    | multiplicativeExpression '*' unaryExpression
+    | multiplicativeExpression '/' unaryExpression
+    | multiplicativeExpression '%' unaryExpression
+    ;
+
+memberExpression
+    : primaryExpression
+    | functionExpression
+    | memberExpression '[' expression ']'
+    | memberExpression '.' IDENT
+    | 'new' memberExpression arguments
+    ;
+
+expression
+    : assignmentExpression
+    | expression ',' assignmentExpression
+    ;
+
+assignmentExpressionNoIn
+    : conditionalExpressionNoIn
+    | leftHandSideExpression assignmentOperator assignmentExpressionNoIn
+    ;
+
+conditionalExpressionNoIn
+    : logicalORExpressionNoIn
+    | logicalORExpressionNoIn '?' assignmentExpressionNoIn ':' assignmentExpressionNoIn
+    ;
+
+logicalORExpressionNoIn
+    : logicalANDExpressionNoIn
+    | logicalORExpressionNoIn '||' logicalANDExpressionNoIn
+    ;
+
+logicalANDExpressionNoIn
+    : bitwiseORExpressionNoIn
+    | logicalANDExpressionNoIn '&&' bitwiseORExpressionNoIn
+    ;
+
+emptyStatement
+    : ';'
+    ;
+
+expressionStatement
+    : expression (NEWLINE | ';')!
+    ;
+
+ifStatement
+    : 'if' '(' expression ')' statement 'else' statement
+    | 'if' '(' expression ')' statement
+    ;
+
+iterationStatement
+    : 'do' statement 'while' '(' expression ')' ';'
+    | 'while' '(' expression ')' statement
+    | 'for' '(' expressionNoIn? ';' expression? ';' expression? ')' statement
+    | 'for' '(' 'var' variableDeclarationListNoIn ';' expression? ';' expression? ')' statement
+    | 'for' '(' leftHandSideExpression 'in' expression ')' statement
+    | 'for' '(' 'var' variableDeclarationNoIn 'in' expression ')' statement
+    ;
+
+
+continueStatement
+    : 'continue' NEWLINE!* IDENT? ';'
+    ;
+
+breakStatement
+    : 'break' NEWLINE!* IDENT? ';'
+    ;
+
+returnStatement
+    : 'return' NEWLINE!* expression? ';'
+    ;
+
+withStatement
+    : 'with' '(' expression ')' statement
+    ;
+
+labelledStatement
+    : IDENT ':' statement
+    ;
+
+switchStatement
+    : 'switch' '(' expression ')' caseBlock
+    ;
+
+caseBlock
+    : '{' caseClauses? '}'
+    | '{' caseClauses? defaultClause caseClauses? '}'
+    ;
+
+caseClauses
+    : caseClause
+    | caseClauses caseClause
+    ;
+
+caseClause
+    : 'case' expression ':' statementList?
+    ;
+
+defaultClause
+    : 'default' ':' statementList?
+    ;
+
+throwStatement
+    : 'throw' NEWLINE!* expression ';'
+    ;
+
+tryStatement //Can't use catch or finally, check to see if they are reserved words in ANTLR4.
+    : 'try' block catchClause
+    | 'try' block finallyClause
+    | 'try' block catchClause finallyClause
+    ;
+
+catchClause
+    : 'catch' '(' IDENT ')' block
+    ;
+   
+finallyClause
+    : 'finally' block
+    ;
+
+debuggerStatement
+    : 'debugger' ';'
+    ;
+
+/*
+primaryExpression
+
+expressionNoIn
+
+variableDeclarationListNoIn
+*/
+    
 ////
 // THIS IS OLDER AND JS, WE MAY NOT NEED IT FOR .d.ts FILES.
 ////
@@ -622,12 +935,8 @@ declarationSourceFile
   Edited to include TypeScript info - 2013 - David Moore
   All rights reserved.
 */
-
+/*
 // functions
-//functionDeclaration
-//	: 'function' NEWLINE!* IDENT NEWLINE!* formalParameterList NEWLINE!* functionBody
-//	;
-
 formalParameterList
 	: '(' (NEWLINE!* IDENT (NEWLINE!* ',' NEWLINE!* IDENT)*)? NEWLINE!* ')'
 	;
@@ -673,15 +982,6 @@ variableDeclarationList
 variableDeclarationListNoIn
 	: variableDeclarationNoIn (NEWLINE!* ',' NEWLINE!* variableDeclarationNoIn)*
 	;
-
-//Modified for TS - see above
-//variableDeclaration
-//	: IDENT NEWLINE!* initialiser?
-//	;
-//
-//variableDeclarationNoIn
-//	: IDENT NEWLINE!* initialiserNoIn?
-//	;
 
 initialiser
 	: '=' NEWLINE!* assignmentExpression
@@ -959,13 +1259,7 @@ objectLiteral
 	;
 
 propertyNameAndValue
-	: propertyName NEWLINE!* ':' NEWLINE!* assignmentExpression
-	;
-
-propertyName
-	: IDENT
-	| STRING_LITERAL
-	| NUMERIC_LITERAL
+	: type NEWLINE!* ':' NEWLINE!* assignmentExpression
 	;
 
 // primitive literal definition.
@@ -976,3 +1270,4 @@ literal
 	| STRING_LITERAL
 	| NUMERIC_LITERAL
         ;
+*/

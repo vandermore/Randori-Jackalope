@@ -79,9 +79,10 @@ fragment ExponentPart
 	;
 
 IDENT
+    //TODO:: Add in removal of reserved words from the IDENT.
 	: IdentifierStart IdentifierPart*
 	;
-	
+
 fragment IdentifierStart
 	: UnicodeLetter
 	| '$'
