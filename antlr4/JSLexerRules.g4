@@ -80,8 +80,8 @@ fragment ExponentPart
 
 IDENT
     //TODO:: Add in removal of reserved words from the IDENT.
-	: IdentifierStart IdentifierPart*
-	;
+        : IdentifierStart IdentifierPart*
+        ;
 
 fragment IdentifierStart
 	: UnicodeLetter
@@ -496,3 +496,28 @@ fragment UnicodeConnectorPunctuation	// Any character in the Unicode category "C
 	| '\uFF3F'
 	| '\uFF65'
 	;
+
+//Setting GET and SET as lexer rules to eliminate issues with get and set not being seen as IDENTs sometimes.
+GET
+    : 'get'
+    ;
+
+SET
+    : 'set'
+    ;
+
+ANY
+    : 'any'
+    ;
+
+NUMBER
+    : 'number'
+    ;
+
+BOOL
+    : 'bool'
+    ;
+
+STRING
+    : 'string'
+    ;

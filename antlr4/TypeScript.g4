@@ -9,7 +9,7 @@ import JSLexerRules;
 //
 //  TODO:: Need to include newlines and other whitespace if needed.
 //
-// Order (TODO)
+// Order (TODO - Make sure all grammar definitions are arranged in teh following order)
 //      Types
 //      Expressions
 //      Statements
@@ -21,17 +21,17 @@ import JSLexerRules;
 //      Declaration Source Files
 //*****************************************************************
 program
-	: NEWLINE!* sourceElement? NEWLINE!* EOF!
+	: sourceFile? EOF!
 	;
 
 sourceElements
-	: sourceElement (NEWLINE!* sourceElement)*
+	: sourceElement (sourceElement)*
 	;
 
 sourceElement
 	: functionDeclaration
         | ambientDeclaration
-//	| statement
+	| statement
 	;
 
 //
@@ -47,10 +47,10 @@ type
         ;
 
 predefinedType
-        : 'any'
-        | 'number'
-        | 'bool'
-        | 'string'
+        : ANY
+        | NUMBER
+        | BOOL
+        | STRING
         ;
 
 typeName
@@ -127,14 +127,6 @@ propertySignature
     ;
 
 //
-// Function Signatures
-//
-functionSignature
-    : IDENT '?'? '(' parameterList ')' returnTypeAnnotation?
-    | IDENT '(' parameterList? ')' returnTypeAnnotation?
-    ;
-
-//
 // Array Type Literals
 //
 arrayType //This isn't as defined in the spec, but it was mutually left-recursive in ANTLR4.
@@ -167,12 +159,12 @@ constructorType
 // Function Expressions
 //
 functionExpression //Modified from base JavaScript implementation for TS
-	: 'function' NEWLINE!* IDENT? NEWLINE!* callSignature NEWLINE!* '{' functionBody '}'
+	: 'function' IDENT?  callSignature '{' functionBody '}'
 	;
 
 assignmentExpression //Modified to add in arrowFunctionExpression for TS
 	: conditionalExpression
-	| leftHandSideExpression NEWLINE!* assignmentOperator NEWLINE!* assignmentExpression
+	| leftHandSideExpression assignmentOperator assignmentExpression
         | arrowFunctionExpression
 	;
 
@@ -185,12 +177,6 @@ arrowFormalParameters
     : callSignature
     | IDENT
     ;
-
-//unaryExpression 
-//	: postfixExpression
-//	| ('delete' | 'void' | 'typeof' | '++' | '--' | '+' | '-' | '~' | '!') unaryExpression
-//        | '<' type '>'
-//	;
 
 unaryExpression //Modified to add in < Type > for TS
     : postfixExpression
@@ -212,11 +198,11 @@ unaryExpression //Modified to add in < Type > for TS
 //      Statements
 //*****************************************************************
 variableDeclaration //Modified for TS
-	: IDENT NEWLINE!* typeAnnotation? initialiser?
+	: IDENT typeAnnotation? initialiser?
 	;
 
 variableDeclarationNoIn
-	: IDENT NEWLINE!* typeAnnotation? initialiserNoIn?
+	: IDENT typeAnnotation? initialiserNoIn?
 	;
 
 typeAnnotation
@@ -249,11 +235,10 @@ functionImplementation
 //
 // Function Signatures
 //
-//Was duplicate, moved as an | to earlier definition.
-//functionSignature
-//    : IDENT '(' parameterList? ')' returnTypeAnnotation?
-//    ;
-    
+functionSignature
+    : IDENT '?'? '(' parameterList? ')' returnTypeAnnotation?
+    ;
+
 parameterList
     : requiredParameterList
     | optionalParameterList
@@ -300,14 +285,6 @@ returnType
     : type
     | 'void'
     ;
-
-//
-// Function Implementations
-//
-//Dupe
-//functionImplementation
-//    : 'function' functionSignature '{' functionBody '}'
-//    ;
 
 //*****************************************************************
 //      Interfaces
@@ -440,11 +417,11 @@ memberAccessorDeclaration
     ;
 
 getAccessorSignature
-    : 'get' IDENT '(' ')' returnTypeAnnotation?
+    : GET IDENT '(' ')' returnTypeAnnotation?
     ;
 
 setAccessorSignature
-    : 'set' IDENT '(' requiredParameter ')'
+    : SET IDENT '(' requiredParameter ')'
     ;
 
 //*****************************************************************
@@ -482,13 +459,14 @@ moduleElement
 // Module Declarations
 //
 moduleDeclaration
-    : 'module' identifierPath? '{' moduleBody '}'
+    : 'module' IDENT? '{' moduleBody '}'
     ;
 
-identifierPath
-    : IDENT
-    | identifierPath '.' IDENT
-    ;
+//Covered in IDENT -  May want to go back and put in explicit parser here to make consistent with ES5 grammar, though IDENT is a Lexer rule.
+//identifierPath
+//    : identifier
+//    | identifierPath '.' IDENT 
+//    ;
 
 moduleBody
     : moduleElements?
@@ -539,7 +517,7 @@ ambientDeclaration
 // Ambient Variable Declarations
 //
 ambientVariableDeclaration
-        : 'var' IDENT ':' typeAnnotation? ';'
+        : 'var' IDENT typeAnnotation? ';'
         ;
 
 //
@@ -593,7 +571,7 @@ ambientModuleDeclaration
 	;
 
 ambientModuleIdentification
-    : identifierPath
+    : IDENT
     | STRING_LITERAL
     ;
 
@@ -848,9 +826,31 @@ elision
     ;
 
 objectLiteral
-    :
+    : '{' '}'
+    | '{' propertyNameAndValueList '}'
+    | '{' propertyNameAndValueList ',' '}'
     ;
 
+propertyNameAndValueList
+    : propertyAssignment
+    | propertyNameAndValueList ',' propertyAssignment
+    ;
+
+propertyAssignment
+    : propertyName ':' assignmentExpression
+    | GET propertyName '(' ')' '{' functionBody '}'
+    | SET propertyName '(' propertySetParameterList ')' '{' functionBody '}'
+    ;
+
+propertyName
+    : IDENT
+    | STRING_LITERAL
+    | NUMERIC_LITERAL
+    ;
+
+propertySetParameterList
+    : IDENT
+    ;
 
 expression
     : assignmentExpression
@@ -918,8 +918,11 @@ emptyStatement
     : ';'
     ;
 
+// http://es5.github.io/#x12.4
+//ExpressionStatement :
+//  [lookahead ? {{, function}] Expression ;
 expressionStatement
-    : expression (NEWLINE | ';')!
+    : ( '{' | 'function' )! expression
     ;
 
 ifStatement
@@ -938,15 +941,18 @@ iterationStatement
 
 
 continueStatement
-    : 'continue' NEWLINE!* IDENT? ';'
+    : 'continue' ';'
+    | 'continue' NEWLINE!* IDENT? ';'
     ;
 
 breakStatement
-    : 'break' NEWLINE!* IDENT? ';'
+    : 'break' ';'
+    | 'break' NEWLINE!* IDENT? ';'
     ;
 
 returnStatement
-    : 'return' NEWLINE!* expression? ';'
+    : 'return' ';'
+    | 'return' NEWLINE!* expression ';'
     ;
 
 withStatement
@@ -1000,356 +1006,3 @@ finallyClause
 debuggerStatement
     : 'debugger' ';'
     ;
-
-   
-////
-// THIS IS OLDER AND JS, WE MAY NOT NEED IT FOR .d.ts FILES.
-////
-
-//JavaScript
-//*****************************************************************
-//  Since TypeScript is built on top of JS, we can use a JS
-//      parser to parse the generic parts.
-//*****************************************************************
-/*
-  Copyright 2008 Chris Lambrou.
-  Edited for use with ANTRL4 - 2013 - David Moore
-  Edited to include TypeScript info - 2013 - David Moore
-  All rights reserved.
-*/
-/*
-// functions
-formalParameterList
-	: '(' (NEWLINE!* IDENT (NEWLINE!* ',' NEWLINE!* IDENT)*)? NEWLINE!* ')'
-	;
-
-functionBody
-	: '{' NEWLINE!* sourceElements NEWLINE!* '}'
-	;
-
-// statements
-statement
-	: block
-	| variableStatement
-	| emptyStatement
-	| expressionStatement
-	| ifStatement
-	| iterationStatement
-	| continueStatement
-	| breakStatement
-	| returnStatement
-	| withStatement
-	| labelledStatement
-	| switchStatement
-	| throwStatement
-	| tryStatement
-	;
-
-block
-	: '{' NEWLINE!* statementList? NEWLINE!* '}'
-	;
-
-statementList
-	: statement (NEWLINE!* statement)*
-	;
-
-variableStatement
-	: 'var' NEWLINE!* variableDeclarationList (NEWLINE | ';')!
-	;
-
-variableDeclarationList
-	: variableDeclaration (NEWLINE!* ',' NEWLINE!* variableDeclaration)*
-	;
-
-variableDeclarationListNoIn
-	: variableDeclarationNoIn (NEWLINE!* ',' NEWLINE!* variableDeclarationNoIn)*
-	;
-
-initialiser
-	: '=' NEWLINE!* assignmentExpression
-	;
-
-initialiserNoIn
-	: '=' NEWLINE!* assignmentExpressionNoIn
-	;
-
-emptyStatement
-	: ';'
-	;
-
-expressionStatement
-	: expression (NEWLINE | ';')!
-	;
-
-ifStatement
-	: 'if' NEWLINE!* '(' NEWLINE!* expression NEWLINE!* ')' NEWLINE!* statement (NEWLINE!* 'else' NEWLINE!* statement)?
-	;
-
-iterationStatement
-	: doWhileStatement
-	| whileStatement
-	| forStatement
-	| forInStatement
-	;
-
-doWhileStatement
-	: 'do' NEWLINE!* statement NEWLINE!* 'while' NEWLINE!* '(' expression ')' (NEWLINE | ';')!
-	;
-
-whileStatement
-	: 'while' NEWLINE!* '(' NEWLINE!* expression NEWLINE!* ')' NEWLINE!* statement
-	;
-
-forStatement
-	: 'for' NEWLINE!* '(' (NEWLINE!* forStatementInitialiserPart)? NEWLINE!* ';' (NEWLINE!* expression)? NEWLINE!* ';' (NEWLINE!* expression)? NEWLINE!* ')' NEWLINE!* statement
-	;
-
-forStatementInitialiserPart
-	: expressionNoIn
-	| 'var' NEWLINE!* variableDeclarationListNoIn
-	;
-
-forInStatement
-	: 'for' NEWLINE!* '(' NEWLINE!* forInStatementInitialiserPart NEWLINE!* 'in' NEWLINE!* expression NEWLINE!* ')' NEWLINE!* statement
-	;
-
-forInStatementInitialiserPart
-	: leftHandSideExpression
-	| 'var' NEWLINE!* variableDeclarationNoIn
-	;
-
-continueStatement
-	: 'continue' IDENT? (NEWLINE | ';')!
-	;
-
-breakStatement
-	: 'break' IDENT? (NEWLINE | ';')!
-	;
-
-returnStatement
-	: 'return' expression? (NEWLINE | ';')!
-	;
-
-withStatement
-	: 'with' NEWLINE!* '(' NEWLINE!* expression NEWLINE!* ')' NEWLINE!* statement
-	;
-
-labelledStatement
-	: IDENT NEWLINE!* ':' NEWLINE!* statement
-	;
-
-switchStatement
-	: 'switch' NEWLINE!* '(' NEWLINE!* expression NEWLINE!* ')' NEWLINE!* caseBlock
-	;
-
-caseBlock
-	: '{' (NEWLINE!* caseClause)* (NEWLINE!* defaultClause (NEWLINE!* caseClause)*)? NEWLINE!* '}'
-	;
-
-caseClause
-	: 'case' NEWLINE!* expression NEWLINE!* ':' NEWLINE!* statementList?
-	;
-
-defaultClause
-	: 'default' NEWLINE!* ':' NEWLINE!* statementList?
-	;
-
-throwStatement
-	: 'throw' expression (NEWLINE | ';')!
-	;
-
-tryStatement
-	: 'try' NEWLINE!* block NEWLINE!* (finallyClause | catchClause (NEWLINE!* finallyClause)?)
-	;
-
-catchClause
-	: 'catch' NEWLINE!* '(' NEWLINE!* IDENT NEWLINE!* ')' NEWLINE!* block
-	;
-
-finallyClause
-	: 'finally' NEWLINE!* block
-	;
-
-// expressions
-expression
-	: assignmentExpression (NEWLINE!* ',' NEWLINE!* assignmentExpression)*
-	;
-
-expressionNoIn
-	: assignmentExpressionNoIn (NEWLINE!* ',' NEWLINE!* assignmentExpressionNoIn)*
-	;
-
-//Modified for TypeScript - above
-//assignmentExpression
-//	: conditionalExpression
-//	| leftHandSideExpression NEWLINE!* assignmentOperator NEWLINE!* assignmentExpression
-//	;
-
-assignmentExpressionNoIn
-	: conditionalExpressionNoIn
-	| leftHandSideExpression NEWLINE!* assignmentOperator NEWLINE!* assignmentExpressionNoIn
-	;
-
-leftHandSideExpression
-	: callExpression
-	| newExpression
-	;
-
-newExpression
-	: memberExpression
-	| 'new' NEWLINE!* newExpression
-	;
-
-memberExpression
-	: (primaryExpression | functionExpression | 'new' NEWLINE!* memberExpression NEWLINE!* arguments) (NEWLINE!* memberExpressionSuffix)*
-	;
-
-memberExpressionSuffix
-	: indexSuffix
-	| propertyReferenceSuffix
-	;
-
-callExpression
-	: memberExpression NEWLINE!* arguments (NEWLINE!* callExpressionSuffix)*
-	;
-
-callExpressionSuffix
-	: arguments
-	| indexSuffix
-	| propertyReferenceSuffix
-	;
-
-arguments
-	: '(' (NEWLINE!* assignmentExpression (NEWLINE!* ',' NEWLINE!* assignmentExpression)*)? NEWLINE!* ')'
-	;
-
-indexSuffix
-	: '[' NEWLINE!* expression NEWLINE!* ']'
-	;
-
-propertyReferenceSuffix
-	: '.' NEWLINE!* IDENT
-	;
-
-assignmentOperator
-	: '=' | '*=' | '/=' | '%=' | '+=' | '-=' | '<<=' | '>>=' | '>>>=' | '&=' | '^=' | '|='
-	;
-
-conditionalExpression
-	: logicalORExpression (NEWLINE!* '?' NEWLINE!* assignmentExpression NEWLINE!* ':' NEWLINE!* assignmentExpression)?
-	;
-
-conditionalExpressionNoIn
-	: logicalORExpressionNoIn (NEWLINE!* '?' NEWLINE!* assignmentExpressionNoIn NEWLINE!* ':' NEWLINE!* assignmentExpressionNoIn)?
-	;
-
-logicalORExpression
-	: logicalANDExpression (NEWLINE!* '||' NEWLINE!* logicalANDExpression)*
-	;
-
-logicalORExpressionNoIn
-	: logicalANDExpressionNoIn (NEWLINE!* '||' NEWLINE!* logicalANDExpressionNoIn)*
-	;
-
-logicalANDExpression
-	: bitwiseORExpression (NEWLINE!* '&&' NEWLINE!* bitwiseORExpression)*
-	;
-
-logicalANDExpressionNoIn
-	: bitwiseORExpressionNoIn (NEWLINE!* '&&' NEWLINE!* bitwiseORExpressionNoIn)*
-	;
-
-bitwiseORExpression
-	: bitwiseXORExpression (NEWLINE!* '|' NEWLINE!* bitwiseXORExpression)*
-	;
-
-bitwiseORExpressionNoIn
-	: bitwiseXORExpressionNoIn (NEWLINE!* '|' NEWLINE!* bitwiseXORExpressionNoIn)*
-	;
-
-bitwiseXORExpression
-	: bitwiseANDExpression (NEWLINE!* '^' NEWLINE!* bitwiseANDExpression)*
-	;
-
-bitwiseXORExpressionNoIn
-	: bitwiseANDExpressionNoIn (NEWLINE!* '^' NEWLINE!* bitwiseANDExpressionNoIn)*
-	;
-
-bitwiseANDExpression
-	: equalityExpression (NEWLINE!* '&' NEWLINE!* equalityExpression)*
-	;
-
-bitwiseANDExpressionNoIn
-	: equalityExpressionNoIn (NEWLINE!* '&' NEWLINE!* equalityExpressionNoIn)*
-	;
-
-equalityExpression
-	: relationalExpression (NEWLINE!* ('==' | '!=' | '===' | '!==') NEWLINE!* relationalExpression)*
-	;
-
-equalityExpressionNoIn
-	: relationalExpressionNoIn (NEWLINE!* ('==' | '!=' | '===' | '!==') NEWLINE!* relationalExpressionNoIn)*
-	;
-
-relationalExpression
-	: shiftExpression (NEWLINE!* ('<' | '>' | '<=' | '>=' | 'instanceof' | 'in') NEWLINE!* shiftExpression)*
-	;
-
-relationalExpressionNoIn
-	: shiftExpression (NEWLINE!* ('<' | '>' | '<=' | '>=' | 'instanceof') NEWLINE!* shiftExpression)*
-	;
-
-shiftExpression
-	: additiveExpression (NEWLINE!* ('<<' | '>>' | '>>>') NEWLINE!* additiveExpression)*
-	;
-
-additiveExpression
-	: multiplicativeExpression (NEWLINE!* ('+' | '-') NEWLINE!* multiplicativeExpression)*
-	;
-
-multiplicativeExpression
-	: unaryExpression (NEWLINE!* ('*' | '/' | '%') NEWLINE!* unaryExpression)*
-	;
-
-// Modified for TS - see above
-//unaryExpression
-//	: postfixExpression
-//	| ('delete' | 'void' | 'typeof' | '++' | '--' | '+' | '-' | '~' | '!') unaryExpression
-//	;
-
-postfixExpression
-	: leftHandSideExpression ('++' | '--')?
-	;
-
-primaryExpression
-	: 'this'
-	| IDENT
-	| literal
-	| arrayLiteral
-	| objectLiteral
-	| '(' NEWLINE!* expression NEWLINE!* ')'
-	;
-
-// arrayLiteral definition.
-arrayLiteral
-	: '[' NEWLINE!* assignmentExpression? (NEWLINE!* ',' (NEWLINE!* assignmentExpression)?)* NEWLINE!* ']'
-	;
-
-// objectLiteral definition.
-objectLiteral
-	: '{' NEWLINE!* propertyNameAndValue (NEWLINE!* ',' NEWLINE!* propertyNameAndValue)* NEWLINE!* '}'
-	;
-
-propertyNameAndValue
-	: type NEWLINE!* ':' NEWLINE!* assignmentExpression
-	;
-
-// primitive literal definition.
-literal
-	: 'null'
-	| 'true'
-	| 'false'
-	| STRING_LITERAL
-	| NUMERIC_LITERAL
-        ;
-*/
