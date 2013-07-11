@@ -24,30 +24,48 @@ public class FileOutput {
                     new FileOutputStream( BASE_DIRECTORY + "\\" + fileName ), "utf-8"));
         } catch (IOException ex){
             // report
+            System.out.println( "Unable to open file for writing: " + ex.toString() );
         }
     }
 
     public void writeToFile( String stuffToWrite ) {
+        //TODO: I don't like this here.
+        if ( writer == null ) {
+            openFileForWriting( packagePath + ".as" );
+        }
+
         try {
             writer.write( stuffToWrite );
         } catch (IOException ex){
             // report
+            System.out.println( "Unable to write to file: " + ex.toString() );
         }
     }
 
     public void insertLineBreak() {
+        //TODO: I don't like this here.
+        if ( writer == null ) {
+            openFileForWriting( packagePath + ".as" );
+        }
+
         try {
             writer.write( "\n" );
         } catch (IOException ex){
             // report
+            System.out.println( "Unable to write linebreak to file: " + ex.toString() );
         }
     }
 
     public void closeFileForWriting() {
+        if ( writer == null ) {
+            return;
+        }
+
         try {
             writer.close();
         } catch (Exception ex) {
             // report
+            System.out.println( "Unable to close file for writing: " + ex.toString() );
         }
     }
 }

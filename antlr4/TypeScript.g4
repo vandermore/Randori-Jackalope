@@ -106,14 +106,14 @@ typeMember
 // Call Signatures
 //
 callSignature
-    : '(' parameterList? ')' returnTypeAnnotation?
+    : openParen parameterList? closeParen returnTypeAnnotation?
     ;
 
 //
 // Construct Signature
 //
 constructSignature
-    : 'new' '(' parameterList? ')' typeAnnotation?
+    : 'new' openParen parameterList? closeParen typeAnnotation?
     ;
 
 //
@@ -146,14 +146,14 @@ arrayType //This isn't as defined in the spec, but it was mutually left-recursiv
 // Function Type Literals
 //
 functionType
-    : '(' parameterList? ')' '=>' returnType
+    : openParen parameterList? closeParen '=>' returnType
     ;
 
 //
 // Constructor Type Literals
 //
 constructorType
-    : 'new' '(' parameterList? ')' '=>' type
+    : 'new' openParen parameterList? closeParen '=>' type
     ;
 
 //*****************************************************************
@@ -240,22 +240,22 @@ functionImplementation
 // Function Signatures
 //
 functionSignature
-    : IDENT '?'? '(' parameterList? ')' returnTypeAnnotation?
+    : IDENT '?'? openParen parameterList? closeParen returnTypeAnnotation?
     ;
 
 parameterList
     : requiredParameterList
     | optionalParameterList
     | restParameter
-    | requiredParameterList ',' optionalParameterList
-    | requiredParameterList ',' restParameter
-    | optionalParameterList ',' restParameter
-    | requiredParameterList ',' optionalParameterList ',' restParameter
+    | requiredParameterList comma optionalParameterList
+    | requiredParameterList comma restParameter
+    | optionalParameterList comma restParameter
+    | requiredParameterList comma optionalParameterList comma restParameter
     ;
 
 requiredParameterList
     : requiredParameter
-    | requiredParameterList ',' requiredParameter
+    | requiredParameterList comma requiredParameter
     ;
 
 requiredParameter
@@ -269,7 +269,7 @@ publicOrPrivate
 
 optionalParameterList
     : optionalParameter
-    | optionalParameterList ',' optionalParameter
+    | optionalParameterList comma optionalParameter
     ;
 
 optionalParameter
@@ -306,7 +306,7 @@ interfaceExtendsClause
 
 interfaceNameList
     : interfaceName
-    | interfaceNameList ',' interfaceName
+    | interfaceNameList comma interfaceName
     ;
 
 interfaceName
@@ -369,11 +369,11 @@ constructorOverloads
     ;
 
 constructorOverload
-    : 'constructor' '(' parameterList? ')' ';'
+    : 'constructor' openParen parameterList? closeParen ';'
     ;
 
 constructorImplementation
-    : 'constructor' '(' parameterList ')' '{' functionBody '}'
+    : 'constructor' openParen parameterList closeParen '{' functionBody '}'
     ;
 
 //
@@ -421,11 +421,11 @@ memberAccessorDeclaration
     ;
 
 getAccessorSignature
-    : GET IDENT '(' ')' returnTypeAnnotation?
+    : GET IDENT openParen closeParen returnTypeAnnotation?
     ;
 
 setAccessorSignature
-    : SET IDENT '(' requiredParameter ')'
+    : SET IDENT openParen requiredParameter closeParen
     ;
 
 //*****************************************************************
@@ -495,7 +495,7 @@ moduleReference
     ;
 
 externalModuleReference
-    : 'module' '(' STRING_LITERAL ')'
+    : 'module' openParen STRING_LITERAL closeParen
     ;
 
 //*****************************************************************
@@ -529,7 +529,7 @@ ambientFunctionDeclaration
 // Ambient Class Declarations
 //
 ambientClassDeclaration
-        : 'class' IDENT classHeritage '{' ambientClassBody '}'
+        : 'class' IDENT classHeritage openBrace ambientClassBody closeBrace
         ;
 
 ambientClassBody
@@ -548,7 +548,7 @@ ambientClassBodyElement
     ;
 
 ambientConstructorDeclaration
-    : 'constructor' '(' parameterList ')' ';'
+    : 'constructor' openParen parameterList closeParen ';'
     ;
 
 ambientMemberDeclaration
@@ -635,13 +635,13 @@ callExpression
     ;
 
 arguments
-    : '(' ')'
-    | '(' argumentList ')'
+    : openParen closeParen
+    | openParen argumentList closeParen
     ;
 
 argumentList
     : assignmentExpression
-    | argumentList ',' assignmentExpression
+    | argumentList comma assignmentExpression
     ;
 
 assignmentOperator
@@ -702,12 +702,12 @@ variableStatement
 
 variableDeclarationList
     : variableDeclaration
-    | variableDeclarationList ',' variableDeclaration
+    | variableDeclarationList comma variableDeclaration
     ;
 
 variableDeclarationListNoIn
     : variableDeclarationNoIn
-    | variableDeclarationListNoIn ',' variableDeclarationNoIn
+    | variableDeclarationListNoIn comma variableDeclarationNoIn
     ;
 
 logicalORExpression
@@ -787,7 +787,7 @@ primaryExpression
 	| literal
 	| arrayLiteral
 	| objectLiteral
-	| '(' expression ')'
+	| openParen expression closeParen
 	;
 
 literal
@@ -810,34 +810,34 @@ booleanLiteral
 arrayLiteral
     : '[' elision? ']'
     | '[' elementList ']'
-    | '[' elementList ',' elision? ']'
+    | '[' elementList comma elision? ']'
     ;
 
 elementList
     : elision? assignmentExpression
-    | elementList ',' elision? assignmentExpression
+    | elementList comma elision? assignmentExpression
     ;
 
 elision
-    : ','
-    | elision ','
+    : comma
+    | elision comma
     ;
 
 objectLiteral
     : '{' '}'
     | '{' propertyNameAndValueList '}'
-    | '{' propertyNameAndValueList ',' '}'
+    | '{' propertyNameAndValueList comma '}'
     ;
 
 propertyNameAndValueList
     : propertyAssignment
-    | propertyNameAndValueList ',' propertyAssignment
+    | propertyNameAndValueList comma propertyAssignment
     ;
 
 propertyAssignment
     : propertyName ':' assignmentExpression
-    | GET propertyName '(' ')' '{' functionBody '}'
-    | SET propertyName '(' propertySetParameterList ')' '{' functionBody '}'
+    | GET propertyName openParen closeParen '{' functionBody '}'
+    | SET propertyName openParen propertySetParameterList closeParen '{' functionBody '}'
     ;
 
 propertyName
@@ -852,12 +852,12 @@ propertySetParameterList
 
 expression
     : assignmentExpression
-    | expression ',' assignmentExpression
+    | expression comma assignmentExpression
     ;
 
 expressionNoIn
     : assignmentExpressionNoIn
-    | expressionNoIn ',' assignmentExpressionNoIn
+    | expressionNoIn comma assignmentExpressionNoIn
     ;
 
 assignmentExpressionNoIn
@@ -924,17 +924,17 @@ expressionStatement
     ;
 
 ifStatement
-    : 'if' '(' expression ')' statement 'else' statement
-    | 'if' '(' expression ')' statement
+    : 'if' openParen expression closeParen statement 'else' statement
+    | 'if' openParen expression closeParen statement
     ;
 
 iterationStatement
-    : 'do' statement 'while' '(' expression ')' ';'
-    | 'while' '(' expression ')' statement
-    | 'for' '(' expressionNoIn? ';' expression? ';' expression? ')' statement
-    | 'for' '(' 'var' variableDeclarationListNoIn ';' expression? ';' expression? ')' statement
-    | 'for' '(' leftHandSideExpression 'in' expression ')' statement
-    | 'for' '(' 'var' variableDeclarationNoIn 'in' expression ')' statement
+    : 'do' statement 'while' openParen expression closeParen ';'
+    | 'while' openParen expression closeParen statement
+    | 'for' openParen expressionNoIn? ';' expression? ';' expression? closeParen statement
+    | 'for' openParen 'var' variableDeclarationListNoIn ';' expression? ';' expression? closeParen statement
+    | 'for' openParen leftHandSideExpression 'in' expression closeParen statement
+    | 'for' openParen 'var' variableDeclarationNoIn 'in' expression closeParen statement
     ;
 
 
@@ -954,7 +954,7 @@ returnStatement
     ;
 
 withStatement
-    : 'with' '(' expression ')' statement
+    : 'with' openParen expression closeParen statement
     ;
 
 labelledStatement
@@ -962,7 +962,7 @@ labelledStatement
     ;
 
 switchStatement
-    : 'switch' '(' expression ')' caseBlock
+    : 'switch' openParen expression closeParen caseBlock
     ;
 
 caseBlock
@@ -994,7 +994,7 @@ tryStatement //Can't use catch or finally, check to see if they are reserved wor
     ;
 
 catchClause
-    : 'catch' '(' IDENT ')' block
+    : 'catch' openParen IDENT closeParen block
     ;
    
 finallyClause
@@ -1003,4 +1003,28 @@ finallyClause
 
 debuggerStatement
     : 'debugger' ';'
+    ;
+
+//
+//  These parser rules are to make it easier to find seams in the language for
+//      later translation.
+//
+openParen
+    : OPEN_PAREN
+    ;
+
+closeParen
+    : CLOSE_PAREN
+    ;
+
+comma
+    : COMMA
+    ;
+
+openBrace
+    : OPEN_BRACE
+    ;
+
+closeBrace
+    : CLOSE_BRACE
     ;

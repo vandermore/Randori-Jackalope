@@ -18,7 +18,7 @@ public class Main {
     //NOTE:: This is based off of the ANTLR4 boilerplate in The Definitive ANTLR 4 Reference, p. 42.
     public static void main(String[] args) throws Exception {
         //NOTE:: The hardcoding here is for testing/debugging in IntelliJ only.
-        FileReader fileReader = new FileReader( System.getProperty("user.dir") + "\\inputs\\ExtJSsmall.d.ts" );
+        FileReader fileReader = new FileReader( System.getProperty("user.dir") + "\\inputs\\ExtJS.d.ts" );
         // create a CharStream that reads from standard input
         ANTLRInputStream input = new ANTLRInputStream( fileReader );
 
@@ -40,7 +40,8 @@ public class Main {
         // Create a generic parse tree walker that can trigger callbacks
         ParseTreeWalker walker = new ParseTreeWalker();
 
+        TypeScriptToAS typeScriptToAS = new TypeScriptToAS( parser );
         // Walk the tree created during the parse, trigger callbacks
-        walker.walk(new TypeScriptToAS(), tree);
+        walker.walk( typeScriptToAS, tree );
     }
 }
