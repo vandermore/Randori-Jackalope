@@ -1,6 +1,10 @@
 grammar TypeScript;
 import JSLexerRules;
 
+@header{
+package net.digitalprimates;
+}
+
 //TypeScript Declarations
 //*****************************************************************
 //  TypeScript Declaration additions
@@ -461,12 +465,6 @@ moduleElement
 moduleDeclaration
     : 'module' IDENT? '{' moduleBody '}'
     ;
-
-//Covered in IDENT -  May want to go back and put in explicit parser here to make consistent with ES5 grammar, though IDENT is a Lexer rule.
-//identifierPath
-//    : identifier
-//    | identifierPath '.' IDENT 
-//    ;
 
 moduleBody
     : moduleElements?
