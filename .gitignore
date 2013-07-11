@@ -24,7 +24,4 @@ java/inputs
 *.tokens
 
 #Ignore the following, since they are generated from the ANTLR v4 *.g4 files in the antlr4 directory
-java/src/net/digitalprimates/TypeScriptBaseListener.java
-java/src/net/digitalprimates/TypeScriptLexer.java
-java/src/net/digitalprimates/TypeScriptListener.java
-java/src/net/digitalprimates/TypeScriptParser.java
+java/src/net/digitalprimates/antlr/*.java

@@ -3,7 +3,6 @@ package net.digitalprimates.translators.actionscript;
 import java.io.*;
 
 /**
- * Created with IntelliJ IDEA.
  * User: David "Vandermore" Moore
  * Date: 7/11/13
  * Time: 12:04 PM

@@ -1,7 +1,7 @@
 package net.digitalprimates.translators.actionscript;
 
-import net.digitalprimates.TypeScriptListener;
-import net.digitalprimates.TypeScriptParser;
+import net.digitalprimates.antlr.TypeScriptListener;
+import net.digitalprimates.antlr.TypeScriptParser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;

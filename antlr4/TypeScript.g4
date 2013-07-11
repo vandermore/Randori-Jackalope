@@ -2,7 +2,7 @@ grammar TypeScript;
 import JSLexerRules;
 
 @header{
-package net.digitalprimates;
+package net.digitalprimates.antlr;
 }
 
 //TypeScript Declarations
