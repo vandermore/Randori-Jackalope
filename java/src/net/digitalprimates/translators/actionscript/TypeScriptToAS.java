@@ -370,9 +370,9 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void enterTypeName(TypeScriptParser.TypeNameContext ctx) {
         String aType = ctx.getText();
 
-        returnType = getASType( ctx.getText() );
+        aType = getASType( ctx.getText() );
 
-        fileOutput.writeToFile( returnType );
+        fileOutput.writeToFile( aType );
     }
 
     @Override public void exitTypeName(TypeScriptParser.TypeNameContext ctx) { }
@@ -433,7 +433,9 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitLeftHandSideExpression(TypeScriptParser.LeftHandSideExpressionContext ctx) { }
 
-    @Override public void enterInterfaceNameList(TypeScriptParser.InterfaceNameListContext ctx) { }
+    @Override public void enterInterfaceNameList(TypeScriptParser.InterfaceNameListContext ctx) {
+//        System.out.println( ctx.getText() );
+    }
 
     @Override public void exitInterfaceNameList(TypeScriptParser.InterfaceNameListContext ctx) { }
 
@@ -854,7 +856,8 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void exitFunctionBody(TypeScriptParser.FunctionBodyContext ctx) { }
 
     @Override public void enterInterfaceExtendsClause(TypeScriptParser.InterfaceExtendsClauseContext ctx) {
-        fileOutput.writeToFile( " extends " + ctx.interfaceNameList().getText() );
+//        System.out.println( ctx.interfaceNameList().getText() );
+        fileOutput.writeToFile( " extends " );
     }
 
     @Override public void exitInterfaceExtendsClause(TypeScriptParser.InterfaceExtendsClauseContext ctx) { }
