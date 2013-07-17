@@ -14,14 +14,16 @@ public class FileOutput {
     //Set up for writing output to a file.
     protected Writer writer = null;
     protected String fileForWritingName;
-    public String packagePath;
+    public String packageStructure;
+    private String directoryPath = "";
+    private String noWriteFileName = "NoWriterERROR";
 
     public void openFileForWriting( String fileName ) {
         fileForWritingName = fileName;
 
         try {
             writer = new BufferedWriter(new OutputStreamWriter(
-                    new FileOutputStream( BASE_DIRECTORY + "\\" + fileName ), "utf-8"));
+                    new FileOutputStream( BASE_DIRECTORY + directoryPath + "\\" + fileName ), "utf-8"));
         } catch (IOException ex){
             // report
             System.out.println( "Unable to open file for writing: " + ex.toString() );
@@ -29,9 +31,9 @@ public class FileOutput {
     }
 
     public void writeToFile( String stuffToWrite ) {
-        //TODO: I don't like this here.
+        //TODO: I don't like this here. We should have a writer already. Creates a dummy file to write to using the package name.
         if ( writer == null ) {
-            openFileForWriting( packagePath + ".as" );
+            openFileForWriting( noWriteFileName + ".as" );
         }
 
         try {
@@ -43,9 +45,9 @@ public class FileOutput {
     }
 
     public void insertLineBreak() {
-        //TODO: I don't like this here.
+        //TODO: I don't like this here. We should have a writer already. Creates a dummy file to write to using the package name.
         if ( writer == null ) {
-            openFileForWriting( packagePath + ".as" );
+            openFileForWriting( noWriteFileName + ".as" );
         }
 
         try {
@@ -67,5 +69,43 @@ public class FileOutput {
             // report
             System.out.println( "Unable to close file for writing: " + ex.toString() );
         }
+    }
+
+    /**
+     * Creates a directory structure from a . delimited string.
+     * @param value
+     */
+    public void createDirectories( String value ) {
+        packageStructure = value;
+
+        String[] packagePathArr = getPackagePath( value );
+        String dirSeparator = "\\";
+
+        //Need to loop through the package path array to create the directory and subdirectories.
+        for ( int i = 0; i < packagePathArr.length; i++ ) {
+            directoryPath += dirSeparator;
+            directoryPath += packagePathArr[ i ];
+        }
+
+        File directoryStructure = new File( BASE_DIRECTORY + directoryPath );
+        try {
+            if ( directoryStructure.mkdirs() ) {
+                //System.out.println("Directory Created");
+            } else {
+                //System.out.println("Directory is not created");
+            }
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Gets an array of strings that is the package package path from a dot delimited string.
+     * @param value
+     * @return
+     */
+    protected String[] getPackagePath ( String value ) {
+        //The split value is a regex. So I need to escape the . character.
+        return value.split("\\.");
     }
 }

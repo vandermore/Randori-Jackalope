@@ -317,7 +317,7 @@ interfaceName
 //      Classes
 //*****************************************************************
 classDeclaration
-    : 'class' IDENT classHeritage '{' classBody '}'
+    : 'class' IDENT classHeritage openBrace classBody closeBrace
     ;
 
 //
@@ -409,7 +409,7 @@ memberFunctionOverload
     ;
 
 memberFunctionImplementation
-    : publicOrPrivate? 'static'? functionSignature '{' functionBody '}'
+    : publicOrPrivate? 'static'? functionSignature openBrace functionBody closeBrace
     ;
 
 //

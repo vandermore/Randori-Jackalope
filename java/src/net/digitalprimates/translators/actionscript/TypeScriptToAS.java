@@ -17,10 +17,14 @@ public class TypeScriptToAS implements TypeScriptListener {
     public static final String CLOSE_BRACE = "}";
     public static final String TAB = "\t";
     public static final String SEMI_COLON = ";";
+
     protected FileOutput fileOutput;
     protected Boolean isArrayType = false;
     protected Boolean isInterface = false;
+    protected String returnType = "";
     TypeScriptParser parser;
+
+    //TODO:: Can make a TAB depth method that will insert the correct number of tabs into a file depending on the depth that the parse is on.
 
     public TypeScriptToAS( TypeScriptParser parser ) {
         this.parser = parser;
@@ -87,7 +91,6 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void enterArrayType(TypeScriptParser.ArrayTypeContext ctx) {
         isArrayType = true;
-//        System.out.println( "enterArrayType " + ctx.getText() );
     }
 
     @Override public void exitArrayType(TypeScriptParser.ArrayTypeContext ctx) {
@@ -122,8 +125,7 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void enterParameterList(TypeScriptParser.ParameterListContext ctx) { }
 
-    @Override public void exitParameterList(TypeScriptParser.ParameterListContext ctx) {
-    }
+    @Override public void exitParameterList(TypeScriptParser.ParameterListContext ctx) { }
 
     @Override public void enterMemberFunctionImplementation(TypeScriptParser.MemberFunctionImplementationContext ctx) { }
 
@@ -180,6 +182,7 @@ public class TypeScriptToAS implements TypeScriptListener {
         fileOutput.writeToFile( OPEN_BRACE );
         fileOutput.insertLineBreak();
     }
+
     @Override public void exitOpenBrace(TypeScriptParser.OpenBraceContext ctx) { }
 
     @Override public void enterDefaultClause(TypeScriptParser.DefaultClauseContext ctx) { }
@@ -210,7 +213,6 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void exitCaseBlock(TypeScriptParser.CaseBlockContext ctx) { }
 
     @Override public void enterPropertySignature(TypeScriptParser.PropertySignatureContext ctx) {
-//        System.out.println( "enterPropertySignature: " + ctx.getText() );
         fileOutput.insertLineBreak();
         fileOutput.writeToFile( TAB + ctx.IDENT().getText() );
     }
@@ -276,7 +278,9 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitInterfaceName(TypeScriptParser.InterfaceNameContext ctx) { }
 
-    @Override public void enterFunctionType(TypeScriptParser.FunctionTypeContext ctx) { }
+    @Override public void enterFunctionType(TypeScriptParser.FunctionTypeContext ctx) {
+
+    }
 
     @Override public void exitFunctionType(TypeScriptParser.FunctionTypeContext ctx) { }
 
@@ -298,7 +302,6 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void enterTypeAnnotation(TypeScriptParser.TypeAnnotationContext ctx) {
         fileOutput.writeToFile( ": " );
-        System.out.println( "enterTypeAnnotation: " + ctx.getText() );
     }
 
     @Override public void exitTypeAnnotation(TypeScriptParser.TypeAnnotationContext ctx) { }
@@ -309,7 +312,6 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void enterReturnTypeAnnotation(TypeScriptParser.ReturnTypeAnnotationContext ctx) {
         fileOutput.writeToFile( ": " );
-        System.out.println( "enterReturnTypeAnnotation: " + ctx.getText() );
     }
 
     @Override public void exitReturnTypeAnnotation(TypeScriptParser.ReturnTypeAnnotationContext ctx) { }
@@ -342,9 +344,13 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitClassHeritage(TypeScriptParser.ClassHeritageContext ctx) { }
 
-    @Override public void enterGetAccessorSignature(TypeScriptParser.GetAccessorSignatureContext ctx) { }
+    @Override public void enterGetAccessorSignature(TypeScriptParser.GetAccessorSignatureContext ctx) {
 
-    @Override public void exitGetAccessorSignature(TypeScriptParser.GetAccessorSignatureContext ctx) { }
+    }
+
+    @Override public void exitGetAccessorSignature(TypeScriptParser.GetAccessorSignatureContext ctx) {
+
+    }
 
     @Override public void enterOptionalParameter(TypeScriptParser.OptionalParameterContext ctx) {
         fileOutput.writeToFile( ctx.IDENT().getText() );
@@ -364,9 +370,9 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void enterTypeName(TypeScriptParser.TypeNameContext ctx) {
         String aType = ctx.getText();
 
-        aType = getASType( aType );
+        returnType = getASType( ctx.getText() );
 
-        fileOutput.writeToFile( aType );
+        fileOutput.writeToFile( returnType );
     }
 
     @Override public void exitTypeName(TypeScriptParser.TypeNameContext ctx) { }
@@ -415,9 +421,13 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitExpression(TypeScriptParser.ExpressionContext ctx) { }
 
-    @Override public void enterCallSignature(TypeScriptParser.CallSignatureContext ctx) { }
+    @Override public void enterCallSignature(TypeScriptParser.CallSignatureContext ctx) {
 
-    @Override public void exitCallSignature(TypeScriptParser.CallSignatureContext ctx) { }
+    }
+
+    @Override public void exitCallSignature(TypeScriptParser.CallSignatureContext ctx) {
+
+    }
 
     @Override public void enterLeftHandSideExpression(TypeScriptParser.LeftHandSideExpressionContext ctx) { }
 
@@ -427,7 +437,9 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitInterfaceNameList(TypeScriptParser.InterfaceNameListContext ctx) { }
 
-    @Override public void enterFunctionImplementation(TypeScriptParser.FunctionImplementationContext ctx) { }
+    @Override public void enterFunctionImplementation(TypeScriptParser.FunctionImplementationContext ctx) {
+
+    }
 
     @Override public void exitFunctionImplementation(TypeScriptParser.FunctionImplementationContext ctx) { }
 
@@ -441,7 +453,9 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void enterAmbientFunctionDeclaration(TypeScriptParser.AmbientFunctionDeclarationContext ctx) {
         fileOutput.insertLineBreak();
-        fileOutput.writeToFile( TAB + "public function " );
+        fileOutput.writeToFile( TAB );
+        fileOutput.writeToFile( TAB );
+        fileOutput.writeToFile( "public function " );
     }
 
     @Override public void exitAmbientFunctionDeclaration(TypeScriptParser.AmbientFunctionDeclarationContext ctx) {
@@ -450,11 +464,16 @@ public class TypeScriptToAS implements TypeScriptListener {
         fileOutput.insertLineBreak();
     }
 
-    @Override public void enterAmbientElement(TypeScriptParser.AmbientElementContext ctx) { }
+    @Override public void enterAmbientElement(TypeScriptParser.AmbientElementContext ctx) {
+//        System.out.println( "enterAmbientElement " + tabIndentLevel + " " + ctx.getText() );
+    }
 
     @Override public void exitAmbientElement(TypeScriptParser.AmbientElementContext ctx) { }
 
-    @Override public void enterReturnStatement(TypeScriptParser.ReturnStatementContext ctx) { }
+    @Override public void enterReturnStatement(TypeScriptParser.ReturnStatementContext ctx) {
+        //TODO:: method return should go here.
+
+    }
 
     @Override public void exitReturnStatement(TypeScriptParser.ReturnStatementContext ctx) { }
 
@@ -501,7 +520,6 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void exitMemberFunctionDeclaration(TypeScriptParser.MemberFunctionDeclarationContext ctx) { }
 
     @Override public void enterClassExtendsClause(TypeScriptParser.ClassExtendsClauseContext ctx) {
-        System.out.println("enterClassExtendsClause: " + ctx.getText() );
         fileOutput.writeToFile( " extends " + ctx.className().getText() );
     }
 
@@ -556,19 +574,23 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void enterInterfaceDeclaration(TypeScriptParser.InterfaceDeclarationContext ctx) {
         isInterface = true;
 
-        System.out.println("enterInterfaceDeclaration" + ctx.IDENT().getText());
-
         fileOutput.openFileForWriting( ctx.IDENT().getText() + ".as" );
-        fileOutput.writeToFile( "package " + fileOutput.packagePath + SEMI_COLON );
+        fileOutput.writeToFile( "package " + fileOutput.packageStructure );
+        fileOutput.writeToFile( " " );
+        fileOutput.writeToFile( OPEN_BRACE );
         fileOutput.insertLineBreak();
         fileOutput.insertLineBreak();
+        fileOutput.writeToFile( TAB );
+        fileOutput.writeToFile( "[JavaScript export=false]");
+        fileOutput.insertLineBreak();
+        fileOutput.writeToFile( TAB );
         fileOutput.writeToFile( "public interface " + ctx.IDENT().getText() );
     }
 
     @Override public void exitInterfaceDeclaration(TypeScriptParser.InterfaceDeclarationContext ctx) {
         isInterface = false;
-
-        System.out.println("exitInterfaceDeclaration" + ctx.IDENT().getText());
+        fileOutput.writeToFile( CLOSE_BRACE );
+        fileOutput.insertLineBreak();
     }
 
     @Override public void enterComma(TypeScriptParser.CommaContext ctx){
@@ -579,10 +601,10 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     //Package that the class/interface/etc. is located in.
     @Override public void enterAmbientModuleDeclaration(TypeScriptParser.AmbientModuleDeclarationContext ctx) {
-        System.out.println("enterAmbientModuleDeclaration " + ctx.ambientModuleIdentification().getText());
         fileOutput = new FileOutput();
-        fileOutput.packagePath = ctx.ambientModuleIdentification().getText();
-//        fileOutput.openFileForWriting( ctx.IDENT().getText() + ".as" );
+
+        //Creates the directory structure for the Class and Interface files.
+        fileOutput.createDirectories( ctx.ambientModuleIdentification().getText() );
     }
 
     @Override public void exitAmbientModuleDeclaration(TypeScriptParser.AmbientModuleDeclarationContext ctx) {
@@ -630,11 +652,11 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void exitEmptyStatement(TypeScriptParser.EmptyStatementContext ctx) { }
 
     @Override public void enterStatement(TypeScriptParser.StatementContext ctx) {
-        System.out.println("enterStatement" + ctx);
+//        System.out.println("enterStatement" + ctx);
     }
 
     @Override public void exitStatement(TypeScriptParser.StatementContext ctx) {
-        System.out.println("exitStatement" + ctx);
+//        System.out.println("exitStatement" + ctx);
     }
 
     @Override public void enterStatementList(TypeScriptParser.StatementListContext ctx) { }
@@ -736,7 +758,9 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitElementList(TypeScriptParser.ElementListContext ctx) { }
 
-    @Override public void enterMemberDeclaration(TypeScriptParser.MemberDeclarationContext ctx) { }
+    @Override public void enterMemberDeclaration(TypeScriptParser.MemberDeclarationContext ctx) {
+
+    }
 
     @Override public void exitMemberDeclaration(TypeScriptParser.MemberDeclarationContext ctx) { }
 
@@ -747,14 +771,15 @@ public class TypeScriptToAS implements TypeScriptListener {
         //          This will need to change later.
         if ( isInterface ) {
             fileOutput.insertLineBreak();
-            fileOutput.writeToFile( TAB + "function " );
+            fileOutput.writeToFile( TAB );
+            fileOutput.writeToFile( TAB );
+            fileOutput.writeToFile( "function " );
         }
 
         fileOutput.writeToFile( ctx.IDENT().getText() );
     }
 
     @Override public void exitFunctionSignature(TypeScriptParser.FunctionSignatureContext ctx) {
-
     }
 
     @Override public void enterTryStatement(TypeScriptParser.TryStatementContext ctx) { }
@@ -768,12 +793,35 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void enterAmbientStaticDeclaration(TypeScriptParser.AmbientStaticDeclarationContext ctx) {
         fileOutput.insertLineBreak();
         fileOutput.writeToFile( TAB );
+        fileOutput.writeToFile( TAB );
         fileOutput.writeToFile( "public static " );
 
-        //TODO:: Need to determine if the next token set is a function or a property.
+        //NOTE:: The ExtJS declaration file doesn't have any properties in it's class definitions. Hardcoding this for now.
+            //TODO:: Need to determine if the next token set is a function or a property.
+        fileOutput.writeToFile( "function " );
     }
 
     @Override public void exitAmbientStaticDeclaration(TypeScriptParser.AmbientStaticDeclarationContext ctx) {
+        fileOutput.writeToFile( " " );
+        //This is done here, since in the .d.ts files, there is no actual function body. So I can't place this content inside the funciton body.
+        // In AS, if there is no return declared in a method that has a return type, there will be a compiler error.
+        fileOutput.writeToFile( OPEN_BRACE );
+        if ( returnType != "void" ) {
+            fileOutput.insertLineBreak();
+//            fileOutput.writeToFile( getTabIndentLevel( 1 ) );
+            fileOutput.writeToFile( TAB );
+            fileOutput.writeToFile( TAB );
+            fileOutput.writeToFile( TAB );
+            fileOutput.writeToFile( "return " + "null" + ";");
+            fileOutput.insertLineBreak();
+            fileOutput.writeToFile( TAB );
+            fileOutput.writeToFile( TAB );
+
+        } else {
+            fileOutput.writeToFile( " " );
+        }
+        fileOutput.writeToFile( CLOSE_BRACE );
+
         fileOutput.insertLineBreak();
     }
 
@@ -785,7 +833,9 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitClassElements(TypeScriptParser.ClassElementsContext ctx) { }
 
-    @Override public void enterFunctionExpression(TypeScriptParser.FunctionExpressionContext ctx) { }
+    @Override public void enterFunctionExpression(TypeScriptParser.FunctionExpressionContext ctx) {
+
+    }
 
     @Override public void exitFunctionExpression(TypeScriptParser.FunctionExpressionContext ctx) { }
 
@@ -797,7 +847,9 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitConstructSignature(TypeScriptParser.ConstructSignatureContext ctx) { }
 
-    @Override public void enterFunctionBody(TypeScriptParser.FunctionBodyContext ctx) { }
+    @Override public void enterFunctionBody(TypeScriptParser.FunctionBodyContext ctx) {
+//
+    }
 
     @Override public void exitFunctionBody(TypeScriptParser.FunctionBodyContext ctx) { }
 
@@ -809,18 +861,23 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void enterAmbientClassDeclaration(TypeScriptParser.AmbientClassDeclarationContext ctx) {
         fileOutput.openFileForWriting( ctx.IDENT().getText() + ".as" );
-        System.out.println("enterAmbientClassDeclaration" + ctx.IDENT().getText());
 
-        fileOutput.writeToFile( "package " + fileOutput.packagePath + SEMI_COLON );
+        fileOutput.writeToFile( "package " + fileOutput.packageStructure );
+        fileOutput.writeToFile( " " );
+        fileOutput.writeToFile( OPEN_BRACE );
         fileOutput.insertLineBreak();
         fileOutput.insertLineBreak();
+        fileOutput.writeToFile( TAB );
+        fileOutput.writeToFile( "[JavaScript export=false]");
+        fileOutput.insertLineBreak();
+        fileOutput.writeToFile( TAB );
         fileOutput.writeToFile( "public class " + ctx.IDENT().getText() );
-
     }
 
     @Override public void exitAmbientClassDeclaration(TypeScriptParser.AmbientClassDeclarationContext ctx) {
         fileOutput.insertLineBreak();
         fileOutput.writeToFile( CLOSE_BRACE );
+        fileOutput.insertLineBreak();
     }
 
     @Override public void enterContinueStatement(TypeScriptParser.ContinueStatementContext ctx) { }
@@ -889,7 +946,7 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitObjectType(TypeScriptParser.ObjectTypeContext ctx) {
         fileOutput.writeToFile( CLOSE_BRACE );
-        //TODO:: Determine if this is an interface or not. If it is, then we need to put a trailing ';'
+        fileOutput.insertLineBreak();
     }
 
     @Override public void enterModuleDeclaration(TypeScriptParser.ModuleDeclarationContext ctx) { }
