@@ -32,6 +32,8 @@ public class TypeScriptToAS implements TypeScriptListener {
     protected Boolean isDefaultClass = false;
     protected String possibleClassName;
 
+    protected String interfaceName = "";
+
     //TODO:: Can make a TAB depth method that will insert the correct number of tabs into a file depending on the depth that the parse is on.
 
     public TypeScriptToAS( TypeScriptParser parser ) {
@@ -473,6 +475,8 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitAmbientFunctionDeclaration(TypeScriptParser.AmbientFunctionDeclarationContext ctx) {
         fileOutput.writeToFile( " " );
+        fileOutput.writeToFile( OPEN_BRACE );
+        fileOutput.writeToFile( " " );
         fileOutput.writeToFile( CLOSE_BRACE );
         fileOutput.insertLineBreak();
     }
@@ -584,6 +588,7 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void enterInterfaceDeclaration(TypeScriptParser.InterfaceDeclarationContext ctx) {
         isInterface = true;
+        interfaceName = ctx.IDENT().getText();
 
         fileOutput.openFileForWriting( ctx.IDENT().getText() + ".as" );
         fileOutput.writeToFile( "package " + fileOutput.packageStructure );
@@ -595,7 +600,7 @@ public class TypeScriptToAS implements TypeScriptListener {
         fileOutput.writeToFile( "[JavaScript export=false]");
         fileOutput.insertLineBreak();
         fileOutput.writeToFile( TAB );
-        fileOutput.writeToFile( "public interface " + ctx.IDENT().getText() );
+        fileOutput.writeToFile( "public interface " + interfaceName );
     }
 
     @Override public void exitInterfaceDeclaration(TypeScriptParser.InterfaceDeclarationContext ctx) {
@@ -636,6 +641,7 @@ public class TypeScriptToAS implements TypeScriptListener {
         // This happens here and not at the enterAmbientElement level, since enterAmbientElement is called several
         // times for the same declaration of the class.
 
+        Boolean classHasAnInterface = false;
         Boolean isADefaultClass = true;
         for ( int i = 0; i < ctx.getChildCount(); i++ ) {
             for ( int j = 0; j < ctx.getChild( i ).getChildCount(); j++ ) {
@@ -921,16 +927,23 @@ public class TypeScriptToAS implements TypeScriptListener {
         fileOutput.writeToFile( OPEN_BRACE );
         fileOutput.insertLineBreak();
         fileOutput.insertLineBreak();
-        fileOutput.writeToFile(TAB);
+        fileOutput.writeToFile( TAB );
         fileOutput.writeToFile("[JavaScript export=false]");
         fileOutput.insertLineBreak();
         fileOutput.writeToFile( TAB );
-        fileOutput.writeToFile( "public class " + ctx.IDENT().getText() + OPEN_BRACE );
+        fileOutput.writeToFile( "public class " + ctx.IDENT().getText() );
+
+        //NOTE:: Major assumption here is that all classes have an interface, and that the interface is declared
+        // before the class in the definition file.
+        fileOutput.writeToFile( " " );
+        fileOutput.writeToFile( "implements" );
+        fileOutput.writeToFile( " " );
+        fileOutput.writeToFile( interfaceName );
     }
 
     @Override public void exitAmbientClassDeclaration(TypeScriptParser.AmbientClassDeclarationContext ctx) {
         fileOutput.insertLineBreak();
-        fileOutput.writeToFile(CLOSE_BRACE);
+        fileOutput.writeToFile( CLOSE_BRACE );
         fileOutput.insertLineBreak();
     }
 
