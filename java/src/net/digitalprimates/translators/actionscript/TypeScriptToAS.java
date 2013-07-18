@@ -5,7 +5,10 @@ import net.digitalprimates.antlr.TypeScriptParser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.tree.ErrorNode;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
+
+import java.util.List;
 
 /**
  * User: David "Vandermore" Moore
@@ -22,7 +25,12 @@ public class TypeScriptToAS implements TypeScriptListener {
     protected Boolean isArrayType = false;
     protected Boolean isInterface = false;
     protected String returnType = "";
-    TypeScriptParser parser;
+    protected TypeScriptParser parser;
+    //These two are used for when the base class is implemented. Ext's base class is just functions and parameters,
+    // no class or interface definition.
+    //TODO:: This may need to change if we make this more generic, rather than for just ExtJS.
+    protected Boolean isDefaultClass = false;
+    protected String possibleClassName;
 
     //TODO:: Can make a TAB depth method that will insert the correct number of tabs into a file depending on the depth that the parse is on.
 
@@ -59,13 +67,16 @@ public class TypeScriptToAS implements TypeScriptListener {
         return aType;
     }
 
+    /**
+     * Creates the parameters for modules. This is the default class Ext for ExtJS. Has not been tested for other
+     * frameworks.
+     * @param ctx
+     */
     @Override public void enterAmbientVariableDeclaration(TypeScriptParser.AmbientVariableDeclarationContext ctx) {
-        System.out.println( "enterAmbientVariableDeclaration: " + ctx.getText() );
-        System.out.println( "                               : " + ctx.IDENT() );
-        System.out.println( "                               : " + ctx.typeAnnotation().getText() );
-
         fileOutput.insertLineBreak();
-        fileOutput.writeToFile( TAB + "public var " );
+        fileOutput.writeToFile( TAB );
+        fileOutput.writeToFile( TAB );
+        fileOutput.writeToFile( "public var " );
         fileOutput.writeToFile( ctx.IDENT().getText() );
     }
 
@@ -466,9 +477,7 @@ public class TypeScriptToAS implements TypeScriptListener {
         fileOutput.insertLineBreak();
     }
 
-    @Override public void enterAmbientElement(TypeScriptParser.AmbientElementContext ctx) {
-//        System.out.println( "enterAmbientElement " + tabIndentLevel + " " + ctx.getText() );
-    }
+    @Override public void enterAmbientElement(TypeScriptParser.AmbientElementContext ctx) { }
 
     @Override public void exitAmbientElement(TypeScriptParser.AmbientElementContext ctx) { }
 
@@ -607,17 +616,59 @@ public class TypeScriptToAS implements TypeScriptListener {
 
         //Creates the directory structure for the Class and Interface files.
         fileOutput.createDirectories( ctx.ambientModuleIdentification().getText() );
+        possibleClassName = ctx.ambientModuleIdentification().getText();
     }
 
     @Override public void exitAmbientModuleDeclaration(TypeScriptParser.AmbientModuleDeclarationContext ctx) {
+        if ( isDefaultClass ) {
+            fileOutput.writeToFile( TAB );
+            fileOutput.writeToFile( "}" );
+            fileOutput.insertLineBreak();
+            fileOutput.writeToFile( "}" );
+        }
+
         fileOutput.closeFileForWriting();
     }
 
     @Override public void enterAmbientElements(TypeScriptParser.AmbientElementsContext ctx) {
+        //Check to see if either classes or interfaces exist after this. If not,
+        // then this is the base class and we have to save it out as well.
+        // This happens here and not at the enterAmbientElement level, since enterAmbientElement is called several
+        // times for the same declaration of the class.
+
+        Boolean isADefaultClass = true;
+        for ( int i = 0; i < ctx.getChildCount(); i++ ) {
+            for ( int j = 0; j < ctx.getChild( i ).getChildCount(); j++ ) {
+                if ( ctx.getChild( i ).getChild(j) instanceof TypeScriptParser.InterfaceDeclarationContext ) {
+                    isADefaultClass = false;
+                    break;
+                } else if ( ctx.getChild( i ).getChild(j) instanceof TypeScriptParser.AmbientClassDeclarationContext ) {
+                    isADefaultClass = false;
+                    break;
+                }
+            }
+        }
+
+        if ( isADefaultClass ) {
+            isDefaultClass = true;
+            fileOutput.openFileForWriting( possibleClassName + ".as" );
+
+            fileOutput.writeToFile( "package " + fileOutput.packageStructure );
+            fileOutput.writeToFile( " " );
+            fileOutput.writeToFile( OPEN_BRACE );
+            fileOutput.insertLineBreak();
+            fileOutput.insertLineBreak();
+            fileOutput.writeToFile(TAB);
+            fileOutput.writeToFile("[JavaScript export=false]");
+            fileOutput.insertLineBreak();
+            fileOutput.writeToFile( TAB );
+            fileOutput.writeToFile( "public class " + possibleClassName );
+            fileOutput.writeToFile( " " );
+            fileOutput.writeToFile( OPEN_BRACE );
+        }
     }
 
-    @Override public void exitAmbientElements(TypeScriptParser.AmbientElementsContext ctx) {
-    }
+    @Override public void exitAmbientElements(TypeScriptParser.AmbientElementsContext ctx) { }
 
     @Override public void enterTypeMember(TypeScriptParser.TypeMemberContext ctx) { }
 
@@ -870,16 +921,16 @@ public class TypeScriptToAS implements TypeScriptListener {
         fileOutput.writeToFile( OPEN_BRACE );
         fileOutput.insertLineBreak();
         fileOutput.insertLineBreak();
-        fileOutput.writeToFile( TAB );
-        fileOutput.writeToFile( "[JavaScript export=false]");
+        fileOutput.writeToFile(TAB);
+        fileOutput.writeToFile("[JavaScript export=false]");
         fileOutput.insertLineBreak();
         fileOutput.writeToFile( TAB );
-        fileOutput.writeToFile( "public class " + ctx.IDENT().getText() );
+        fileOutput.writeToFile( "public class " + ctx.IDENT().getText() + OPEN_BRACE );
     }
 
     @Override public void exitAmbientClassDeclaration(TypeScriptParser.AmbientClassDeclarationContext ctx) {
         fileOutput.insertLineBreak();
-        fileOutput.writeToFile( CLOSE_BRACE );
+        fileOutput.writeToFile(CLOSE_BRACE);
         fileOutput.insertLineBreak();
     }
 
