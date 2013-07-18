@@ -607,6 +607,7 @@ public class TypeScriptToAS implements TypeScriptListener {
         isInterface = false;
         fileOutput.writeToFile( CLOSE_BRACE );
         fileOutput.insertLineBreak();
+        fileOutput.closeFileForWriting();
     }
 
     @Override public void enterComma(TypeScriptParser.CommaContext ctx){
@@ -630,9 +631,9 @@ public class TypeScriptToAS implements TypeScriptListener {
             fileOutput.writeToFile( "}" );
             fileOutput.insertLineBreak();
             fileOutput.writeToFile( "}" );
+            fileOutput.closeFileForWriting();
         }
 
-        fileOutput.closeFileForWriting();
     }
 
     @Override public void enterAmbientElements(TypeScriptParser.AmbientElementsContext ctx) {
@@ -647,6 +648,8 @@ public class TypeScriptToAS implements TypeScriptListener {
             for ( int j = 0; j < ctx.getChild( i ).getChildCount(); j++ ) {
                 if ( ctx.getChild( i ).getChild(j) instanceof TypeScriptParser.InterfaceDeclarationContext ) {
                     isADefaultClass = false;
+                    TypeScriptParser.InterfaceDeclarationContext foo = (TypeScriptParser.InterfaceDeclarationContext)ctx.getChild(i).getChild(j);
+                    foo.IDENT();
                     break;
                 } else if ( ctx.getChild( i ).getChild(j) instanceof TypeScriptParser.AmbientClassDeclarationContext ) {
                     isADefaultClass = false;
@@ -927,10 +930,10 @@ public class TypeScriptToAS implements TypeScriptListener {
         fileOutput.writeToFile( OPEN_BRACE );
         fileOutput.insertLineBreak();
         fileOutput.insertLineBreak();
-        fileOutput.writeToFile( TAB );
+        fileOutput.writeToFile(TAB);
         fileOutput.writeToFile("[JavaScript export=false]");
         fileOutput.insertLineBreak();
-        fileOutput.writeToFile( TAB );
+        fileOutput.writeToFile(TAB);
         fileOutput.writeToFile( "public class " + ctx.IDENT().getText() );
 
         //NOTE:: Major assumption here is that all classes have an interface, and that the interface is declared
@@ -945,6 +948,7 @@ public class TypeScriptToAS implements TypeScriptListener {
         fileOutput.insertLineBreak();
         fileOutput.writeToFile( CLOSE_BRACE );
         fileOutput.insertLineBreak();
+        fileOutput.closeFileForWriting();
     }
 
     @Override public void enterContinueStatement(TypeScriptParser.ContinueStatementContext ctx) { }

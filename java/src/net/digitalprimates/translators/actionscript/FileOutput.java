@@ -33,6 +33,7 @@ public class FileOutput {
     public void writeToFile( String stuffToWrite ) {
         //TODO: I don't like this here. We should have a writer already. Creates a dummy file to write to using the package name.
         if ( writer == null ) {
+            System.out.println( "writeToFile - no file open for writing" );
             openFileForWriting( noWriteFileName + ".as" );
         }
 
