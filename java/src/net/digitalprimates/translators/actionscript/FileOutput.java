@@ -1,6 +1,7 @@
 package net.digitalprimates.translators.actionscript;
 
 import java.io.*;
+import java.util.ArrayList;
 
 /**
  * User: David "Vandermore" Moore
@@ -8,35 +9,22 @@ import java.io.*;
  * Time: 12:04 PM
  */
 public class FileOutput {
-    //TODO:: This class and the base directory could be made more generic for more languages, i.e. made into a utility class.
-    public static final String BASE_DIRECTORY = "outputHeaders/actionScript";
-
     //Set up for writing output to a file.
     protected Writer writer = null;
-    protected String fileForWritingName;
-    public String packageStructure;
     private String directoryPath = "";
-    private String noWriteFileName = "NoWriterERROR";
+    private String baseDirectory = "";
 
-    public void openFileForWriting( String fileName ) {
-        fileForWritingName = fileName;
-
+    protected void openFileForWriting( String fileName ) {
         try {
             writer = new BufferedWriter(new OutputStreamWriter(
-                    new FileOutputStream( BASE_DIRECTORY + directoryPath + "\\" + fileName ), "utf-8"));
+                    new FileOutputStream( baseDirectory + directoryPath + "\\" + fileName ), "utf-8"));
         } catch (IOException ex){
             // report
             System.out.println( "Unable to open file for writing: " + ex.toString() );
         }
     }
 
-    public void writeToFile( String stuffToWrite ) {
-        //TODO: I don't like this here. We should have a writer already. Creates a dummy file to write to using the package name.
-        if ( writer == null ) {
-            System.out.println( "writeToFile - no file open for writing" );
-            openFileForWriting( noWriteFileName + ".as" );
-        }
-
+    protected void writeToFile( String stuffToWrite ) {
         try {
             writer.write( stuffToWrite );
         } catch (IOException ex){
@@ -45,25 +33,7 @@ public class FileOutput {
         }
     }
 
-    public void insertLineBreak() {
-        //TODO: I don't like this here. We should have a writer already. Creates a dummy file to write to using the package name.
-        if ( writer == null ) {
-            openFileForWriting( noWriteFileName + ".as" );
-        }
-
-        try {
-            writer.write( "\n" );
-        } catch (IOException ex){
-            // report
-            System.out.println( "Unable to write linebreak to file: " + ex.toString() );
-        }
-    }
-
     public void closeFileForWriting() {
-        if ( writer == null ) {
-            return;
-        }
-
         try {
             writer.close();
         } catch (Exception ex) {
@@ -76,8 +46,9 @@ public class FileOutput {
      * Creates a directory structure from a . delimited string.
      * @param value
      */
-    public void createDirectories( String value ) {
-        packageStructure = value;
+    public void createDirectories( String value, String baseDirectory ) {
+        String packageStructure = value;
+        this.baseDirectory = baseDirectory;
 
         String[] packagePathArr = getPackagePath( value );
         String dirSeparator = "\\";
@@ -88,7 +59,7 @@ public class FileOutput {
             directoryPath += packagePathArr[ i ];
         }
 
-        File directoryStructure = new File( BASE_DIRECTORY + directoryPath );
+        File directoryStructure = new File( baseDirectory + directoryPath );
         try {
             if ( directoryStructure.mkdirs() ) {
                 //System.out.println("Directory Created");
