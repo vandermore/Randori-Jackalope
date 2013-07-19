@@ -7,6 +7,9 @@ import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * User: David "Vandermore" Moore
  * Date: 7/11/13
@@ -28,6 +31,8 @@ public class TypeScriptToAS implements TypeScriptListener {
     protected String possibleClassName;
     protected String interfaceName = "";
     protected String returnType = "";
+
+    protected ArrayList<String> methodOverloads;
 
     protected TypeScriptParser parser;
 
@@ -76,6 +81,30 @@ public class TypeScriptToAS implements TypeScriptListener {
         for ( int i = 0; i < importList.length; i++ ) {
             exportPrep.addImports(importList[i]);
         }
+    }
+
+    protected void resetOverloadTracker() {
+        methodOverloads = new ArrayList<String>( 0 );
+    }
+
+    /**
+     * Checks the method names to see if they are being overloaded in any one interface or class.
+     * @param methodName
+     * @return The method name that should be used when writing out the file.
+     */
+    protected String checkForOverloads( String methodName ) {
+        String returnName = methodName;
+        int overloadCounter = 2;
+
+        while ( methodOverloads.contains( returnName ) ) {
+            returnName = methodName + overloadCounter;
+            overloadCounter++;
+            System.out.println( methodName + " : " + returnName );
+        }
+
+        //Add in the method name, so it will be able to be checked later.
+        methodOverloads.add( returnName );
+        return returnName;
     }
 
     /**
@@ -474,10 +503,7 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitAmbientElement(TypeScriptParser.AmbientElementContext ctx) { }
 
-    @Override public void enterReturnStatement(TypeScriptParser.ReturnStatementContext ctx) {
-        //TODO:: method return should go here.
-
-    }
+    @Override public void enterReturnStatement(TypeScriptParser.ReturnStatementContext ctx) { }
 
     @Override public void exitReturnStatement(TypeScriptParser.ReturnStatementContext ctx) { }
 
@@ -577,6 +603,9 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void exitPropertyName(TypeScriptParser.PropertyNameContext ctx) { }
 
     @Override public void enterInterfaceDeclaration(TypeScriptParser.InterfaceDeclarationContext ctx) {
+        //Reset the counter for overloads.
+        resetOverloadTracker();
+
         isInterface = Boolean.TRUE;
         interfaceName = ctx.IDENT().getText();
 
@@ -775,7 +804,6 @@ public class TypeScriptToAS implements TypeScriptListener {
         String asType = getASType( ctx.getText() );
 
         exportPrep.addToPostImport( asType );
-
     }
 
     @Override public void exitModuleOrTypeName(TypeScriptParser.ModuleOrTypeNameContext ctx) { }
@@ -797,8 +825,8 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void exitPropertyAssignment(TypeScriptParser.PropertyAssignmentContext ctx) { }
 
     @Override public void enterImplementsClause(TypeScriptParser.ImplementsClauseContext ctx) {
-        System.out.println("enterClassExtendsClause: " + ctx.getText() );
-        exportPrep.addToPostImport( " implements " + ctx.interfaceNameList().getText() );
+//        System.out.println("enterClassExtendsClause: " + ctx.getText() );
+//        exportPrep.addToPostImport( " implements " + ctx.interfaceNameList().getText() );
     }
 
     @Override public void exitImplementsClause(TypeScriptParser.ImplementsClauseContext ctx) { }
@@ -830,10 +858,12 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void exitMemberDeclaration(TypeScriptParser.MemberDeclarationContext ctx) { }
 
     @Override public void enterFunctionSignature(TypeScriptParser.FunctionSignatureContext ctx) {
-        TokenStream tokens = parser.getTokenStream();
+        System.out.println( "**** " + ctx.IDENT().getText());
+        String functionName = checkForOverloads( ctx.IDENT().getText() );
+
 
         //TODO:: putting 'function' here isn't right. In TS interfaces evidently the 'function' keyword is not used?
-        //          This will need to change later.
+        //  This will need to change later.
         if ( isInterface ) {
             exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
             exportPrep.addToPostImport( ExportPreparation.TAB );
@@ -841,7 +871,7 @@ public class TypeScriptToAS implements TypeScriptListener {
             exportPrep.addToPostImport( "function " );
         }
 
-        exportPrep.addToPostImport( ctx.IDENT().getText() );
+        exportPrep.addToPostImport( functionName );
     }
 
     @Override public void exitFunctionSignature(TypeScriptParser.FunctionSignatureContext ctx) {
@@ -898,9 +928,7 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitClassElements(TypeScriptParser.ClassElementsContext ctx) { }
 
-    @Override public void enterFunctionExpression(TypeScriptParser.FunctionExpressionContext ctx) {
-
-    }
+    @Override public void enterFunctionExpression(TypeScriptParser.FunctionExpressionContext ctx) { }
 
     @Override public void exitFunctionExpression(TypeScriptParser.FunctionExpressionContext ctx) { }
 
@@ -912,9 +940,7 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitConstructSignature(TypeScriptParser.ConstructSignatureContext ctx) { }
 
-    @Override public void enterFunctionBody(TypeScriptParser.FunctionBodyContext ctx) {
-//
-    }
+    @Override public void enterFunctionBody(TypeScriptParser.FunctionBodyContext ctx) { }
 
     @Override public void exitFunctionBody(TypeScriptParser.FunctionBodyContext ctx) { }
 
@@ -925,6 +951,11 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void exitInterfaceExtendsClause(TypeScriptParser.InterfaceExtendsClauseContext ctx) { }
 
     @Override public void enterAmbientClassDeclaration(TypeScriptParser.AmbientClassDeclarationContext ctx) {
+        //Reset the counter for overloads.
+        resetOverloadTracker();
+
+//Is there a way to get all of the function names here, instead of waiting?
+
         exportPrep.beginOutputFile( ctx.IDENT().getText() + ".as" );
 
         exportPrep.addToPreImport( "package " + exportPrep.packageStructure );
