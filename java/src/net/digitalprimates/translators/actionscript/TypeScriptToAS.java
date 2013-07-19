@@ -65,7 +65,11 @@ public class TypeScriptToAS implements TypeScriptListener {
                         break;
                     default:
                         //Another way to capture the import statements needed.
-                        exportPrep.addImports( value );
+                        if ( value.equals("HTMLElement") ) {
+                            exportPrep.addImports( "randori.webkit.html.HTMLElement" );
+                        } else {
+                            exportPrep.addImports( value );
+                        }
                         break;
                 }
             } else {
@@ -264,11 +268,18 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void enterPropertySignature(TypeScriptParser.PropertySignatureContext ctx) {
         exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
-        exportPrep.addToPostImport( ExportPreparation.TAB + ctx.IDENT().getText() );
+        exportPrep.addToPostImport( ExportPreparation.TAB );
+
+        //NOTE: This is here for AS, for now, since AS doesn't allow variable declarations in Interfaces.
+        if ( isInterface ) {
+            exportPrep.addToPostImport( "//" );
+        }
+
+        exportPrep.addToPostImport( ctx.IDENT().getText() );
+
     }
 
-    @Override public void exitPropertySignature(TypeScriptParser.PropertySignatureContext ctx) {
-    }
+    @Override public void exitPropertySignature(TypeScriptParser.PropertySignatureContext ctx) { }
 
     @Override public void enterBreakStatement(TypeScriptParser.BreakStatementContext ctx) { }
 
@@ -326,9 +337,7 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitInterfaceName(TypeScriptParser.InterfaceNameContext ctx) { }
 
-    @Override public void enterFunctionType(TypeScriptParser.FunctionTypeContext ctx) {
-
-    }
+    @Override public void enterFunctionType(TypeScriptParser.FunctionTypeContext ctx) { }
 
     @Override public void exitFunctionType(TypeScriptParser.FunctionTypeContext ctx) { }
 
@@ -627,7 +636,7 @@ public class TypeScriptToAS implements TypeScriptListener {
 
         exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
         exportPrep.addToPostImport( ExportPreparation.TAB );
-        exportPrep.addToPostImport( "[JavaScript export=false]");
+        exportPrep.addToPostImport( "[JavaScript ( export=false )]");
         exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
         exportPrep.addToPostImport( ExportPreparation.TAB );
         exportPrep.addToPostImport( "public interface " + interfaceName );
@@ -698,7 +707,7 @@ public class TypeScriptToAS implements TypeScriptListener {
             exportPrep.addToPreImport( ExportPreparation.LINE_BREAK );
             exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
             exportPrep.addToPostImport( ExportPreparation.TAB );
-            exportPrep.addToPostImport("[JavaScript export=false]");
+            exportPrep.addToPostImport("[JavaScript ( export=false )]");
             exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
             exportPrep.addToPostImport( ExportPreparation.TAB );
             exportPrep.addToPostImport( "public class " + possibleClassName );
@@ -707,8 +716,7 @@ public class TypeScriptToAS implements TypeScriptListener {
         }
     }
 
-    @Override public void exitAmbientElements(TypeScriptParser.AmbientElementsContext ctx) {
-    }
+    @Override public void exitAmbientElements(TypeScriptParser.AmbientElementsContext ctx) { }
 
     @Override public void enterTypeMember(TypeScriptParser.TypeMemberContext ctx) { }
 
@@ -855,9 +863,7 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitElementList(TypeScriptParser.ElementListContext ctx) { }
 
-    @Override public void enterMemberDeclaration(TypeScriptParser.MemberDeclarationContext ctx) {
-
-    }
+    @Override public void enterMemberDeclaration(TypeScriptParser.MemberDeclarationContext ctx) { }
 
     @Override public void exitMemberDeclaration(TypeScriptParser.MemberDeclarationContext ctx) { }
 
@@ -879,8 +885,7 @@ public class TypeScriptToAS implements TypeScriptListener {
         exportPrep.addToPostImport( functionName );
     }
 
-    @Override public void exitFunctionSignature(TypeScriptParser.FunctionSignatureContext ctx) {
-    }
+    @Override public void exitFunctionSignature(TypeScriptParser.FunctionSignatureContext ctx) { }
 
     @Override public void enterTryStatement(TypeScriptParser.TryStatementContext ctx) { }
 
@@ -912,7 +917,7 @@ public class TypeScriptToAS implements TypeScriptListener {
         //This is done here, since in the .d.ts files, there is no actual function body. So I can't place this content inside the funciton body.
         // In AS, if there is no return declared in a method that has a return type, there will be a compiler error.
         exportPrep.addToPostImport( OPEN_BRACE );
-        if ( returnType != "void" ) {
+        if ( !returnType.equals( "void" ) ) {
             exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
 //            exportPrep.writeToFile( getTabIndentLevel( 1 ) );
             exportPrep.addToPostImport( ExportPreparation.TAB );
@@ -974,7 +979,7 @@ public class TypeScriptToAS implements TypeScriptListener {
         exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
         exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
         exportPrep.addToPostImport( ExportPreparation.TAB );
-        exportPrep.addToPostImport("[JavaScript export=false]");
+        exportPrep.addToPostImport("[JavaScript ( export=false )]");
         exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
         exportPrep.addToPostImport( ExportPreparation.TAB );
         exportPrep.addToPostImport( "public class " + ctx.IDENT().getText() );
@@ -1008,7 +1013,7 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void exitAmbientClassBodyElement(TypeScriptParser.AmbientClassBodyElementContext ctx) { }
 
     @Override public void enterReturnType(TypeScriptParser.ReturnTypeContext ctx) {
-        String returnType = ctx.getText();
+        returnType = ctx.getText();
         if ( returnType.equals( "void" ) ) //The rest is handled in enterType
         {
             exportPrep.addToPostImport( returnType );
@@ -1022,7 +1027,7 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void exitIfStatement(TypeScriptParser.IfStatementContext ctx) { }
 
     @Override public void enterAmbientMemberDeclaration(TypeScriptParser.AmbientMemberDeclarationContext ctx) {
-        //TODO:: Not actually called?
+        //TODO:: Not actually called
         exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
         exportPrep.addToPostImport( ExportPreparation.TAB );
     }
