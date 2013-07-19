@@ -94,12 +94,11 @@ public class TypeScriptToAS implements TypeScriptListener {
      */
     protected String checkForOverloads( String methodName ) {
         String returnName = methodName;
-        int overloadCounter = 2;
+        int overloadCounter = 1;
 
         while ( methodOverloads.contains( returnName ) ) {
             returnName = methodName + overloadCounter;
             overloadCounter++;
-            System.out.println( methodName + " : " + returnName );
         }
 
         //Add in the method name, so it will be able to be checked later.
@@ -488,6 +487,11 @@ public class TypeScriptToAS implements TypeScriptListener {
         exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
         exportPrep.addToPostImport( ExportPreparation.TAB );
         exportPrep.addToPostImport( ExportPreparation.TAB );
+        //Since the grammar for ambientFunctionDeclaration and functionSignature force an IDENT, we can do this.
+        exportPrep.addToPostImport( "[JavaScriptMethod (name=\"" + ctx.functionSignature().IDENT().getText() + "\")]" );
+        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
+        exportPrep.addToPostImport( ExportPreparation.TAB );
+        exportPrep.addToPostImport( ExportPreparation.TAB );
         exportPrep.addToPostImport( "public function " );
     }
 
@@ -858,13 +862,14 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void exitMemberDeclaration(TypeScriptParser.MemberDeclarationContext ctx) { }
 
     @Override public void enterFunctionSignature(TypeScriptParser.FunctionSignatureContext ctx) {
-        System.out.println( "**** " + ctx.IDENT().getText());
         String functionName = checkForOverloads( ctx.IDENT().getText() );
-
-
         //TODO:: putting 'function' here isn't right. In TS interfaces evidently the 'function' keyword is not used?
         //  This will need to change later.
         if ( isInterface ) {
+            exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
+            exportPrep.addToPostImport( ExportPreparation.TAB );
+            exportPrep.addToPostImport( ExportPreparation.TAB );
+            exportPrep.addToPostImport( "[JavaScriptMethod (name=\"" + ctx.IDENT().getText() + "\")]" );
             exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
             exportPrep.addToPostImport( ExportPreparation.TAB );
             exportPrep.addToPostImport( ExportPreparation.TAB );
@@ -889,10 +894,16 @@ public class TypeScriptToAS implements TypeScriptListener {
         exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
         exportPrep.addToPostImport( ExportPreparation.TAB );
         exportPrep.addToPostImport( ExportPreparation.TAB );
+
+        //TODO:: Need to determine if the next token set is a function or a property.
+        //Since the grammar for ambientFunctionDeclaration and functionSignature force an IDENT, we can do this.
+        exportPrep.addToPostImport( "[JavaScriptMethod (name=\"" + ctx.functionSignature().IDENT().getText() + "\")]" );
+        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
+        exportPrep.addToPostImport( ExportPreparation.TAB );
+        exportPrep.addToPostImport( ExportPreparation.TAB );
         exportPrep.addToPostImport( "public static " );
 
         //NOTE:: The ExtJS declaration file doesn't have any properties in it's class definitions. Hardcoding this for now.
-            //TODO:: Need to determine if the next token set is a function or a property.
         exportPrep.addToPostImport( "function " );
     }
 
@@ -954,8 +965,6 @@ public class TypeScriptToAS implements TypeScriptListener {
         //Reset the counter for overloads.
         resetOverloadTracker();
 
-//Is there a way to get all of the function names here, instead of waiting?
-
         exportPrep.beginOutputFile( ctx.IDENT().getText() + ".as" );
 
         exportPrep.addToPreImport( "package " + exportPrep.packageStructure );
@@ -972,6 +981,7 @@ public class TypeScriptToAS implements TypeScriptListener {
 
         //NOTE:: Major assumption here is that all classes have an interface, and that the interface is declared
         // before the class in the definition file.
+        // We have to do this, since the class doesn't implement the interface explicitly as you would expect.
         exportPrep.addToPostImport( " " );
         exportPrep.addToPostImport( "implements" );
         exportPrep.addToPostImport( " " );
@@ -1012,6 +1022,7 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void exitIfStatement(TypeScriptParser.IfStatementContext ctx) { }
 
     @Override public void enterAmbientMemberDeclaration(TypeScriptParser.AmbientMemberDeclarationContext ctx) {
+        //TODO:: Not actually called?
         exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
         exportPrep.addToPostImport( ExportPreparation.TAB );
     }
