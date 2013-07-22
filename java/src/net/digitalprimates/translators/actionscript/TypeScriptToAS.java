@@ -23,6 +23,8 @@ public class TypeScriptToAS implements TypeScriptListener {
     protected ExportPreparation exportPrep;
     protected Boolean isArrayType = Boolean.FALSE;
     protected Boolean isInterface = Boolean.FALSE;
+    protected Boolean isARestParameter = Boolean.FALSE;
+
     //These two are used for when the base class is implemented. Ext's base class is just functions and parameters,
     // no class or interface definition.
     //TODO:: This may need to change if we make this more generic, rather than for just ExtJS.
@@ -358,7 +360,9 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void exitIterationStatement(TypeScriptParser.IterationStatementContext ctx) { }
 
     @Override public void enterTypeAnnotation(TypeScriptParser.TypeAnnotationContext ctx) {
-        exportPrep.addToPostImport( ": " );
+        if ( !isARestParameter ) {
+            exportPrep.addToPostImport( ": " );
+        }
     }
 
     @Override public void exitTypeAnnotation(TypeScriptParser.TypeAnnotationContext ctx) { }
@@ -735,11 +739,15 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void exitAdditiveExpression(TypeScriptParser.AdditiveExpressionContext ctx) { }
 
     @Override public void enterPredefinedType(TypeScriptParser.PredefinedTypeContext ctx) {
-        String aType = ctx.getText();
+        if ( !isARestParameter ) {
+            String aType = ctx.getText();
 
-        aType = getASType( aType );
+            aType = getASType( aType );
 
-        exportPrep.addToPostImport( aType );
+            exportPrep.addToPostImport( aType );
+        }
+
+        isARestParameter = Boolean.FALSE;
     }
 
     @Override public void exitPredefinedType(TypeScriptParser.PredefinedTypeContext ctx) { }
@@ -766,6 +774,7 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void enterRestParameter(TypeScriptParser.RestParameterContext ctx) {
         exportPrep.addToPostImport( "..." );
+        isARestParameter = Boolean.TRUE;
     }
 
     @Override public void exitRestParameter(TypeScriptParser.RestParameterContext ctx) { }
@@ -813,9 +822,13 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void exitNewExpression(TypeScriptParser.NewExpressionContext ctx) { }
 
     @Override public void enterModuleOrTypeName(TypeScriptParser.ModuleOrTypeNameContext ctx) {
-        String asType = getASType( ctx.getText() );
+        if ( !isARestParameter ) {
+            String asType = getASType( ctx.getText() );
 
-        exportPrep.addToPostImport( asType );
+            exportPrep.addToPostImport( asType );
+        }
+
+        isARestParameter = Boolean.FALSE;
     }
 
     @Override public void exitModuleOrTypeName(TypeScriptParser.ModuleOrTypeNameContext ctx) { }
