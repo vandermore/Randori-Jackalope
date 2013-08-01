@@ -9,17 +9,18 @@ import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * User: David "Vandermore" Moore
  * Date: 7/11/13
  * Time: 11:03 AM
  */
-public class TypeScriptToAS implements TypeScriptListener {
+public class TypeScriptToASRewriter implements TypeScriptListener {
     public static final String OPEN_BRACE = "{";
     public static final String CLOSE_BRACE = "}";
     public static final String SEMI_COLON = ";";
+
+    public TokenStreamRewriter rewriter;
 
     protected ExportPreparation exportPrep;
     protected Boolean isArrayType = Boolean.FALSE;
@@ -37,12 +38,11 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     protected ArrayList<String> methodOverloads;
 
-//    protected TypeScriptParser parser;
 
     //TODO:: Make a TAB depth method that will insert the correct number of tabs into a file depending on the depth that the parse is on.
 
-    public TypeScriptToAS( TypeScriptParser parser ) {
-//        this.parser = parser;
+    public TypeScriptToASRewriter( TokenStream tokens ) {
+        rewriter = new TokenStreamRewriter( tokens ); //TODO:: Not sure about this at all. How do I use the TokenStreamRewriter and the parser together??!??
     }
 
     protected String getASType( String value ) {
@@ -69,8 +69,10 @@ public class TypeScriptToAS implements TypeScriptListener {
                     default:
                         //Another way to capture the import statements needed.
                         if ( value.equals("HTMLElement") ) {
+//                            rewriter.insertBefore();
                             exportPrep.addImports( "randori.webkit.html.HTMLElement" );
                         } else {
+//                            rewriter.insertBefore();
                             exportPrep.addImports( value );
                         }
                         break;
@@ -86,6 +88,7 @@ public class TypeScriptToAS implements TypeScriptListener {
     protected void writeImports( String imports ) {
         String[] importList = imports.split(",");
         for ( int i = 0; i < importList.length; i++ ) {
+//                            rewriter.insertBefore();
             exportPrep.addImports(importList[i]);
         }
     }
@@ -119,16 +122,10 @@ public class TypeScriptToAS implements TypeScriptListener {
      * @param ctx
      */
     @Override public void enterAmbientVariableDeclaration(TypeScriptParser.AmbientVariableDeclarationContext ctx) {
-        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
-        exportPrep.addToPostImport( ExportPreparation.TAB );
-        exportPrep.addToPostImport( ExportPreparation.TAB );
-        exportPrep.addToPostImport( "public var " );
-        exportPrep.addToPostImport( ctx.IDENT().getText() );
+        rewriter.insertBefore(ctx.start, "public ");
     }
 
-    @Override public void exitAmbientVariableDeclaration(TypeScriptParser.AmbientVariableDeclarationContext ctx) {
-        exportPrep.addToPostImport( SEMI_COLON );
-    }
+    @Override public void exitAmbientVariableDeclaration(TypeScriptParser.AmbientVariableDeclarationContext ctx) { }
 
     @Override public void enterEqualityExpressionNoIn(TypeScriptParser.EqualityExpressionNoInContext ctx) { }
 
@@ -166,9 +163,7 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitMemberAccessorDeclaration(TypeScriptParser.MemberAccessorDeclarationContext ctx) { }
 
-    @Override public void enterCloseParen(TypeScriptParser.CloseParenContext ctx) {
-        exportPrep.addToPostImport( " )" );
-    }
+    @Override public void enterCloseParen(TypeScriptParser.CloseParenContext ctx) { }
 
     @Override public void exitCloseParen(TypeScriptParser.CloseParenContext ctx) { }
 
@@ -188,9 +183,7 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitMemberFunctionImplementation(TypeScriptParser.MemberFunctionImplementationContext ctx) { }
 
-    @Override public void enterOpenParen(TypeScriptParser.OpenParenContext ctx) {
-        exportPrep.addToPostImport( " ( " );
-    }
+    @Override public void enterOpenParen(TypeScriptParser.OpenParenContext ctx) { }
 
     @Override public void exitOpenParen(TypeScriptParser.OpenParenContext ctx) { }
 
@@ -234,11 +227,7 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitAmbientModuleBody(TypeScriptParser.AmbientModuleBodyContext ctx) { }
 
-    @Override public void enterOpenBrace(TypeScriptParser.OpenBraceContext ctx) {
-        exportPrep.addToPostImport( " " );
-        exportPrep.addToPostImport( OPEN_BRACE );
-        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
-    }
+    @Override public void enterOpenBrace(TypeScriptParser.OpenBraceContext ctx) { }
 
     @Override public void exitOpenBrace(TypeScriptParser.OpenBraceContext ctx) { }
 
@@ -248,10 +237,7 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void enterTypeMemberList(TypeScriptParser.TypeMemberListContext ctx) { }
 
-    @Override public void exitTypeMemberList(TypeScriptParser.TypeMemberListContext ctx) {
-        exportPrep.addToPostImport( SEMI_COLON );
-        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
-    }
+    @Override public void exitTypeMemberList(TypeScriptParser.TypeMemberListContext ctx) { }
 
     @Override public void enterBitwiseANDExpression(TypeScriptParser.BitwiseANDExpressionContext ctx) { }
 
@@ -270,16 +256,10 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void exitCaseBlock(TypeScriptParser.CaseBlockContext ctx) { }
 
     @Override public void enterPropertySignature(TypeScriptParser.PropertySignatureContext ctx) {
-        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
-        exportPrep.addToPostImport( ExportPreparation.TAB );
-
         //NOTE: This is here for AS, for now, since AS doesn't allow variable declarations in Interfaces.
         if ( isInterface ) {
-            exportPrep.addToPostImport( "//" );
+            rewriter.insertBefore( ctx.start, "// ");
         }
-
-        exportPrep.addToPostImport( ctx.IDENT().getText() );
-
     }
 
     @Override public void exitPropertySignature(TypeScriptParser.PropertySignatureContext ctx) { }
@@ -320,13 +300,9 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitCallExpression(TypeScriptParser.CallExpressionContext ctx) { }
 
-    @Override public void enterPublicOrPrivate(TypeScriptParser.PublicOrPrivateContext ctx) {
-        exportPrep.addToPostImport( ctx.getText() );
-    }
+    @Override public void enterPublicOrPrivate(TypeScriptParser.PublicOrPrivateContext ctx) { }
 
-    @Override public void exitPublicOrPrivate(TypeScriptParser.PublicOrPrivateContext ctx) {
-        exportPrep.addToPostImport( " " );
-    }
+    @Override public void exitPublicOrPrivate(TypeScriptParser.PublicOrPrivateContext ctx) { }
 
     @Override public void enterRequiredParameterList(TypeScriptParser.RequiredParameterListContext ctx) { }
 
@@ -360,21 +336,20 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitIterationStatement(TypeScriptParser.IterationStatementContext ctx) { }
 
-    @Override public void enterTypeAnnotation(TypeScriptParser.TypeAnnotationContext ctx) {
-        if ( !isARestParameter ) {
-            exportPrep.addToPostImport( ": " );
+    @Override public void enterTypeAnnotation(TypeScriptParser.TypeAnnotationContext ctx) { }
+
+    @Override public void exitTypeAnnotation(TypeScriptParser.TypeAnnotationContext ctx) {
+        if ( isARestParameter ) {
+            //Removes the : and the type from the token stream for ActionScript
+            rewriter.delete( ctx.start, ctx.stop );
         }
     }
-
-    @Override public void exitTypeAnnotation(TypeScriptParser.TypeAnnotationContext ctx) { }
 
     @Override public void enterClassElement(TypeScriptParser.ClassElementContext ctx) { }
 
     @Override public void exitClassElement(TypeScriptParser.ClassElementContext ctx) { }
 
-    @Override public void enterReturnTypeAnnotation(TypeScriptParser.ReturnTypeAnnotationContext ctx) {
-        exportPrep.addToPostImport( ": " );
-    }
+    @Override public void enterReturnTypeAnnotation(TypeScriptParser.ReturnTypeAnnotationContext ctx) { }
 
     @Override public void exitReturnTypeAnnotation(TypeScriptParser.ReturnTypeAnnotationContext ctx) { }
 
@@ -410,14 +385,13 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitGetAccessorSignature(TypeScriptParser.GetAccessorSignatureContext ctx) { }
 
-    @Override public void enterOptionalParameter(TypeScriptParser.OptionalParameterContext ctx) {
-        exportPrep.addToPostImport( ctx.IDENT().getText() );
-    }
+    @Override public void enterOptionalParameter(TypeScriptParser.OptionalParameterContext ctx) { }
 
     @Override public void exitOptionalParameter(TypeScriptParser.OptionalParameterContext ctx) {
         //See if the initialiser is here, if not, put null.
         if ( ctx.initialiser() == null ) {
-            exportPrep.addToPostImport( " = " + "null" );
+//            System.out.println( ctx. + " " + ctx.IDENT().getSymbol().getStopIndex() );
+            rewriter.insertAfter( ctx.stop, " = " + "null" );
         }
     }
 
@@ -498,23 +472,16 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void exitUnaryExpression(TypeScriptParser.UnaryExpressionContext ctx) { }
 
     @Override public void enterAmbientFunctionDeclaration(TypeScriptParser.AmbientFunctionDeclarationContext ctx) {
-        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
-        exportPrep.addToPostImport( ExportPreparation.TAB );
-        exportPrep.addToPostImport( ExportPreparation.TAB );
         //Since the grammar for ambientFunctionDeclaration and functionSignature force an IDENT, we can do this.
-        exportPrep.addToPostImport( "[JavaScriptMethod (name=\"" + ctx.functionSignature().IDENT().getText() + "\")]" );
-        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
-        exportPrep.addToPostImport( ExportPreparation.TAB );
-        exportPrep.addToPostImport( ExportPreparation.TAB );
-        exportPrep.addToPostImport( "public function " );
+        rewriter.insertBefore( ctx.start, "[JavaScriptMethod (name=\"" + ctx.functionSignature().IDENT().getText() + "\")]" +
+                ExportPreparation.LINE_BREAK +
+                ExportPreparation.TAB + ExportPreparation.TAB +
+                "public " );
     }
 
     @Override public void exitAmbientFunctionDeclaration(TypeScriptParser.AmbientFunctionDeclarationContext ctx) {
-        exportPrep.addToPostImport( " " );
-        exportPrep.addToPostImport( OPEN_BRACE );
-        exportPrep.addToPostImport( " " );
-        exportPrep.addToPostImport( CLOSE_BRACE );
-        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
+        rewriter.insertBefore(ctx.stop, OPEN_BRACE + " " + CLOSE_BRACE +
+                ExportPreparation.LINE_BREAK );
     }
 
     @Override public void enterAmbientElement(TypeScriptParser.AmbientElementContext ctx) { }
@@ -533,10 +500,7 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitType(TypeScriptParser.TypeContext ctx) { }
 
-    @Override public void enterCloseBrace(TypeScriptParser.CloseBraceContext ctx) {
-        exportPrep.addToPostImport( CLOSE_BRACE );
-        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
-    }
+    @Override public void enterCloseBrace(TypeScriptParser.CloseBraceContext ctx) { }
 
     @Override public void exitCloseBrace(TypeScriptParser.CloseBraceContext ctx) { }
 
@@ -568,9 +532,7 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitMemberFunctionDeclaration(TypeScriptParser.MemberFunctionDeclarationContext ctx) { }
 
-    @Override public void enterClassExtendsClause(TypeScriptParser.ClassExtendsClauseContext ctx) {
-        exportPrep.addToPostImport( " extends " + ctx.className().getText() );
-    }
+    @Override public void enterClassExtendsClause(TypeScriptParser.ClassExtendsClauseContext ctx) { }
 
     @Override public void exitClassExtendsClause(TypeScriptParser.ClassExtendsClauseContext ctx) { }
 
@@ -590,9 +552,7 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitExternalModuleReference(TypeScriptParser.ExternalModuleReferenceContext ctx) { }
 
-    @Override public void enterInitialiserNoIn(TypeScriptParser.InitialiserNoInContext ctx) {
-        exportPrep.addToPostImport( " = " + ctx.getText() );
-    }
+    @Override public void enterInitialiserNoIn(TypeScriptParser.InitialiserNoInContext ctx) { }
 
     @Override public void exitInitialiserNoIn(TypeScriptParser.InitialiserNoInContext ctx) { }
 
@@ -636,7 +596,7 @@ public class TypeScriptToAS implements TypeScriptListener {
         //Insert import statements
         if ( !( ctx.interfaceExtendsClause() == null ) ) {
             String imports = ctx.interfaceExtendsClause().interfaceNameList().getText();
-            writeImports( imports );
+            writeImports(imports);
         }
 
         exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
@@ -654,12 +614,11 @@ public class TypeScriptToAS implements TypeScriptListener {
         exportPrep.finishOutputFile();
     }
 
-    @Override public void enterComma(TypeScriptParser.CommaContext ctx){
-        exportPrep.addToPostImport( ", " );
-    }
+    @Override public void enterComma(TypeScriptParser.CommaContext ctx) { }
 
-    @Override public void exitComma(TypeScriptParser.CommaContext ctx){}
+    @Override public void exitComma(TypeScriptParser.CommaContext ctx) { }
 
+    //TODO:: Do this last. This is where we need to create directories and files.
     //Package that the class/interface/etc. is located in.
     @Override public void enterAmbientModuleDeclaration(TypeScriptParser.AmbientModuleDeclarationContext ctx) {
         exportPrep = new ExportPreparation();
@@ -739,16 +698,15 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitAdditiveExpression(TypeScriptParser.AdditiveExpressionContext ctx) { }
 
+//TODO:: This does not appear to be called at all.
     @Override public void enterPredefinedType(TypeScriptParser.PredefinedTypeContext ctx) {
-        if ( !isARestParameter ) {
-            String aType = ctx.getText();
-
-            aType = getASType( aType );
-
-            exportPrep.addToPostImport( aType );
-        }
-
-        isARestParameter = Boolean.FALSE;
+//        if ( !isARestParameter ) {
+//            String aType = ctx.getText();
+//
+//            aType = getASType( aType );
+//
+//            exportPrep.addToPostImport( aType );
+//        }
     }
 
     @Override public void exitPredefinedType(TypeScriptParser.PredefinedTypeContext ctx) { }
@@ -761,36 +719,29 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitEmptyStatement(TypeScriptParser.EmptyStatementContext ctx) { }
 
-    @Override public void enterStatement(TypeScriptParser.StatementContext ctx) {
-//        System.out.println("enterStatement" + ctx);
-    }
+    @Override public void enterStatement(TypeScriptParser.StatementContext ctx) { }
 
-    @Override public void exitStatement(TypeScriptParser.StatementContext ctx) {
-//        System.out.println("exitStatement" + ctx);
-    }
+    @Override public void exitStatement(TypeScriptParser.StatementContext ctx) { }
 
     @Override public void enterStatementList(TypeScriptParser.StatementListContext ctx) { }
 
     @Override public void exitStatementList(TypeScriptParser.StatementListContext ctx) { }
 
     @Override public void enterRestParameter(TypeScriptParser.RestParameterContext ctx) {
-        exportPrep.addToPostImport( "..." );
         isARestParameter = Boolean.TRUE;
     }
 
-    @Override public void exitRestParameter(TypeScriptParser.RestParameterContext ctx) { }
+    @Override public void exitRestParameter(TypeScriptParser.RestParameterContext ctx) {
+        isARestParameter = Boolean.FALSE;
+    }
 
     @Override public void enterSourceFile(TypeScriptParser.SourceFileContext ctx) { }
 
     @Override public void exitSourceFile(TypeScriptParser.SourceFileContext ctx) { }
 
-    @Override public void enterProgram(TypeScriptParser.ProgramContext ctx) {
-        System.out.println("Entering Program" + ctx);
-    }
+    @Override public void enterProgram(TypeScriptParser.ProgramContext ctx) { }
 
-    @Override public void exitProgram(TypeScriptParser.ProgramContext ctx) {
-        System.out.println("Exiting Program" + ctx);
-    }
+    @Override public void exitProgram(TypeScriptParser.ProgramContext ctx) { }
 
     @Override public void enterLogicalORExpressionNoIn(TypeScriptParser.LogicalORExpressionNoInContext ctx) { }
 
@@ -825,11 +776,9 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void enterModuleOrTypeName(TypeScriptParser.ModuleOrTypeNameContext ctx) {
         if ( !isARestParameter ) {
             String asType = getASType( ctx.getText() );
-
-            exportPrep.addToPostImport( asType );
+            rewriter.insertBefore( ctx.start, asType );
+            rewriter.delete( ctx.start, ctx.stop );
         }
-
-        isARestParameter = Boolean.FALSE;
     }
 
     @Override public void exitModuleOrTypeName(TypeScriptParser.ModuleOrTypeNameContext ctx) { }
@@ -850,10 +799,7 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitPropertyAssignment(TypeScriptParser.PropertyAssignmentContext ctx) { }
 
-    @Override public void enterImplementsClause(TypeScriptParser.ImplementsClauseContext ctx) {
-//        System.out.println("enterClassExtendsClause: " + ctx.getText() );
-//        exportPrep.addToPostImport( " implements " + ctx.interfaceNameList().getText() );
-    }
+    @Override public void enterImplementsClause(TypeScriptParser.ImplementsClauseContext ctx) { }
 
     @Override public void exitImplementsClause(TypeScriptParser.ImplementsClauseContext ctx) { }
 
@@ -885,18 +831,15 @@ public class TypeScriptToAS implements TypeScriptListener {
         String functionName = checkForOverloads( ctx.IDENT().getText() );
         //TODO:: putting 'function' here isn't right. In TS interfaces evidently the 'function' keyword is not used?
         //  This will need to change later.
-        if ( isInterface ) {
-            exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
-            exportPrep.addToPostImport( ExportPreparation.TAB );
-            exportPrep.addToPostImport( ExportPreparation.TAB );
-            exportPrep.addToPostImport( "[JavaScriptMethod (name=\"" + ctx.IDENT().getText() + "\")]" );
-            exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
-            exportPrep.addToPostImport( ExportPreparation.TAB );
-            exportPrep.addToPostImport( ExportPreparation.TAB );
-            exportPrep.addToPostImport( "function " );
-        }
 
-        exportPrep.addToPostImport( functionName );
+        rewriter.insertBefore( ctx.start, functionName );
+        if ( isInterface ) {
+            rewriter.insertBefore( ctx.start, "[JavaScriptMethod (name=\"" + ctx.IDENT().getText() + "\")]" +
+                    ExportPreparation.LINE_BREAK +
+                    ExportPreparation.TAB + ExportPreparation.TAB +
+                    "function ");
+        }
+        rewriter.delete( ctx.start );
     }
 
     @Override public void exitFunctionSignature(TypeScriptParser.FunctionSignatureContext ctx) { }
@@ -910,44 +853,44 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void exitRelationalExpression(TypeScriptParser.RelationalExpressionContext ctx) { }
 
     @Override public void enterAmbientStaticDeclaration(TypeScriptParser.AmbientStaticDeclarationContext ctx) {
-        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
-        exportPrep.addToPostImport( ExportPreparation.TAB );
-        exportPrep.addToPostImport( ExportPreparation.TAB );
-
         //TODO:: Need to determine if the next token set is a function or a property.
         //Since the grammar for ambientFunctionDeclaration and functionSignature force an IDENT, we can do this.
-        exportPrep.addToPostImport( "[JavaScriptMethod (name=\"" + ctx.functionSignature().IDENT().getText() + "\")]" );
-        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
-        exportPrep.addToPostImport( ExportPreparation.TAB );
-        exportPrep.addToPostImport( ExportPreparation.TAB );
-        exportPrep.addToPostImport( "public static " );
+        String replaceText;
+        replaceText = "[JavaScriptMethod (name=\"" + ctx.functionSignature().IDENT().getText() + "\")]";
+        replaceText += ExportPreparation.LINE_BREAK;
+        replaceText += ExportPreparation.TAB;
+        replaceText += ExportPreparation.TAB;
+        replaceText += "public static ";
+        //NOTE:: The ExtJS declaration file doesn't have any properties in it's class definitions. Hard coding this for now.
+        replaceText += "function";
 
-        //NOTE:: The ExtJS declaration file doesn't have any properties in it's class definitions. Hardcoding this for now.
-        exportPrep.addToPostImport( "function " );
+        rewriter.insertBefore( ctx.start, replaceText );
+
+        rewriter.delete( ctx.start );
     }
 
     @Override public void exitAmbientStaticDeclaration(TypeScriptParser.AmbientStaticDeclarationContext ctx) {
-        exportPrep.addToPostImport( " " );
-        //This is done here, since in the .d.ts files, there is no actual function body. So I can't place this content inside the funciton body.
+        String replaceText;
+        //This is done here, since in the .d.ts files, there is no actual function body. So I can't place this content inside the function body.
         // In AS, if there is no return declared in a method that has a return type, there will be a compiler error.
-        exportPrep.addToPostImport( OPEN_BRACE );
+        replaceText = " ";
+        replaceText += OPEN_BRACE;
         if ( !returnType.equals( "void" ) ) {
-            exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
-//            exportPrep.writeToFile( getTabIndentLevel( 1 ) );
-            exportPrep.addToPostImport( ExportPreparation.TAB );
-            exportPrep.addToPostImport( ExportPreparation.TAB );
-            exportPrep.addToPostImport( ExportPreparation.TAB );
-            exportPrep.addToPostImport( "return " + "null" + ";");
-            exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
-            exportPrep.addToPostImport( ExportPreparation.TAB );
-            exportPrep.addToPostImport( ExportPreparation.TAB );
-
-        } else {
-            exportPrep.addToPostImport( " " );
+            replaceText += ExportPreparation.LINE_BREAK;
+            replaceText += ExportPreparation.TAB;
+            replaceText += ExportPreparation.TAB;
+            replaceText += ExportPreparation.TAB;
+            replaceText += "return " + "null" + SEMI_COLON;
+            replaceText += ExportPreparation.LINE_BREAK;
+            replaceText += ExportPreparation.TAB;
+            replaceText += ExportPreparation.TAB;
         }
-        exportPrep.addToPostImport( CLOSE_BRACE );
 
-        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
+        replaceText += CLOSE_BRACE;
+        replaceText += ExportPreparation.LINE_BREAK;
+
+        rewriter.insertBefore( ctx.stop, replaceText );
+        rewriter.delete( ctx.stop );
     }
 
     @Override public void enterClassName(TypeScriptParser.ClassNameContext ctx) { }
@@ -956,7 +899,9 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void enterQuestion(TypeScriptParser.QuestionContext ctx) { }
 
-    @Override public void exitQuestion(TypeScriptParser.QuestionContext ctx) { }
+    @Override public void exitQuestion(TypeScriptParser.QuestionContext ctx) {
+        rewriter.delete( ctx.start, ctx.stop );
+    }
 
     @Override public void enterClassElements(TypeScriptParser.ClassElementsContext ctx) { }
 
@@ -978,9 +923,7 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitFunctionBody(TypeScriptParser.FunctionBodyContext ctx) { }
 
-    @Override public void enterInterfaceExtendsClause(TypeScriptParser.InterfaceExtendsClauseContext ctx) {
-        exportPrep.addToPostImport( " extends " );
-    }
+    @Override public void enterInterfaceExtendsClause(TypeScriptParser.InterfaceExtendsClauseContext ctx) { }
 
     @Override public void exitInterfaceExtendsClause(TypeScriptParser.InterfaceExtendsClauseContext ctx) { }
 
@@ -1031,11 +974,7 @@ public class TypeScriptToAS implements TypeScriptListener {
     @Override public void exitAmbientClassBodyElement(TypeScriptParser.AmbientClassBodyElementContext ctx) { }
 
     @Override public void enterReturnType(TypeScriptParser.ReturnTypeContext ctx) {
-        returnType = ctx.getText();
-        if ( returnType.equals( "void" ) ) //The rest is handled in enterType
-        {
-            exportPrep.addToPostImport( returnType );
-        }
+        returnType = ctx.getText(); //The rest is handled in enterType
     }
 
     @Override public void exitReturnType(TypeScriptParser.ReturnTypeContext ctx) { }
@@ -1044,25 +983,15 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitIfStatement(TypeScriptParser.IfStatementContext ctx) { }
 
-    @Override public void enterAmbientMemberDeclaration(TypeScriptParser.AmbientMemberDeclarationContext ctx) {
-        //TODO:: Not actually called
-        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
-        exportPrep.addToPostImport( ExportPreparation.TAB );
-    }
+    @Override public void enterAmbientMemberDeclaration(TypeScriptParser.AmbientMemberDeclarationContext ctx) { }
 
-    @Override public void exitAmbientMemberDeclaration(TypeScriptParser.AmbientMemberDeclarationContext ctx) {
-        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
-    }
+    @Override public void exitAmbientMemberDeclaration(TypeScriptParser.AmbientMemberDeclarationContext ctx) { }
 
-    @Override public void enterExportDeclaration(TypeScriptParser.ExportDeclarationContext ctx) {
-        System.out.println( "enterExportDeclaration: " + ctx.getText() );
-    }
+    @Override public void enterExportDeclaration(TypeScriptParser.ExportDeclarationContext ctx) { }
 
     @Override public void exitExportDeclaration(TypeScriptParser.ExportDeclarationContext ctx) { }
 
-    @Override public void enterInitialiser(TypeScriptParser.InitialiserContext ctx) {
-        exportPrep.addToPostImport( " = " + ctx.getText() );
-    }
+    @Override public void enterInitialiser(TypeScriptParser.InitialiserContext ctx) { }
 
     @Override public void exitInitialiser(TypeScriptParser.InitialiserContext ctx) { }
 
@@ -1078,15 +1007,9 @@ public class TypeScriptToAS implements TypeScriptListener {
 
     @Override public void exitSourceElement(TypeScriptParser.SourceElementContext ctx) { }
 
-    @Override public void enterObjectType(TypeScriptParser.ObjectTypeContext ctx) {
-        exportPrep.addToPostImport( " " + OPEN_BRACE );
-        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
-    }
+    @Override public void enterObjectType(TypeScriptParser.ObjectTypeContext ctx) { }
 
-    @Override public void exitObjectType(TypeScriptParser.ObjectTypeContext ctx) {
-        exportPrep.addToPostImport( CLOSE_BRACE );
-        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
-    }
+    @Override public void exitObjectType(TypeScriptParser.ObjectTypeContext ctx) { }
 
     @Override public void enterModuleDeclaration(TypeScriptParser.ModuleDeclarationContext ctx) { }
 

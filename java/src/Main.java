@@ -1,6 +1,7 @@
 import net.digitalprimates.antlr.TypeScriptLexer;
 import net.digitalprimates.antlr.TypeScriptParser;
 import net.digitalprimates.translators.actionscript.TypeScriptToAS;
+import net.digitalprimates.translators.actionscript.TypeScriptToASRewriter;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -40,8 +41,12 @@ public class Main {
         // Create a generic parse tree walker that can trigger callbacks
         ParseTreeWalker walker = new ParseTreeWalker();
 
-        TypeScriptToAS typeScriptToAS = new TypeScriptToAS( parser );
+//        TypeScriptToAS typeScriptToAS = new TypeScriptToAS( parser );
+        TypeScriptToASRewriter typeScriptToASRewriter = new TypeScriptToASRewriter( tokens );
         // Walk the tree created during the parse, trigger callbacks
-        walker.walk( typeScriptToAS, tree );
+//        walker.walk( typeScriptToAS, tree );
+        walker.walk( typeScriptToASRewriter, tree );
+
+        System.out.println( typeScriptToASRewriter.rewriter.getText() );
     }
 }

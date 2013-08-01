@@ -521,3 +521,7 @@ BOOL
 STRING
     : 'string'
     ;
+
+QUESTION
+    : '?'
+    ;

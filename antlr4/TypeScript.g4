@@ -127,7 +127,7 @@ indexSignature
 // Property Signatures
 //
 propertySignature
-    : IDENT '?'? typeAnnotation?
+    : IDENT question? typeAnnotation?
     ;
 
 //
@@ -240,7 +240,7 @@ functionImplementation
 // Function Signatures
 //
 functionSignature
-    : IDENT '?'? openParen parameterList? closeParen returnTypeAnnotation?
+    : IDENT question? openParen parameterList? closeParen returnTypeAnnotation?
     ;
 
 parameterList
@@ -273,7 +273,7 @@ optionalParameterList
     ;
 
 optionalParameter
-    : publicOrPrivate? IDENT '?' typeAnnotation?
+    : publicOrPrivate? IDENT question typeAnnotation?
     | publicOrPrivate? IDENT typeAnnotation? initialiser
     ;
 
@@ -610,7 +610,7 @@ functionBody
 
 conditionalExpression
     : logicalORExpression
-    | logicalORExpression '?' assignmentExpression ':' assignmentExpression
+    | logicalORExpression QUESTION assignmentExpression ':' assignmentExpression
     ;
 
 block
@@ -867,7 +867,7 @@ assignmentExpressionNoIn
 
 conditionalExpressionNoIn
     : logicalORExpressionNoIn
-    | logicalORExpressionNoIn '?' assignmentExpressionNoIn ':' assignmentExpressionNoIn
+    | logicalORExpressionNoIn QUESTION assignmentExpressionNoIn ':' assignmentExpressionNoIn
     ;
 
 logicalORExpressionNoIn
@@ -1027,4 +1027,8 @@ openBrace
 
 closeBrace
     : CLOSE_BRACE
+    ;
+
+question
+    : QUESTION
     ;
