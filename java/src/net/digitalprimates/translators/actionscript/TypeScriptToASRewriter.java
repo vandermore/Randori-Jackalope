@@ -20,6 +20,7 @@ public class TypeScriptToASRewriter implements TypeScriptListener {
     public static final String CLOSE_BRACE = "}";
     public static final String SEMI_COLON = ";";
 
+    protected TokenStream tokenStream;
     public TokenStreamRewriter rewriter;
 
     protected ExportPreparation exportPrep;
@@ -38,11 +39,11 @@ public class TypeScriptToASRewriter implements TypeScriptListener {
 
     protected ArrayList<String> methodOverloads;
 
-
-    //TODO:: Make a TAB depth method that will insert the correct number of tabs into a file depending on the depth that the parse is on.
+    protected String currentPassName = "";
 
     public TypeScriptToASRewriter( TokenStream tokens ) {
-        rewriter = new TokenStreamRewriter( tokens ); //TODO:: Not sure about this at all. How do I use the TokenStreamRewriter and the parser together??!??
+        tokenStream = tokens;
+        rewriter = new TokenStreamRewriter( tokens );
     }
 
     protected String getASType( String value ) {
@@ -580,38 +581,66 @@ public class TypeScriptToASRewriter implements TypeScriptListener {
 
     @Override public void exitPropertyName(TypeScriptParser.PropertyNameContext ctx) { }
 
+    //This is where Interface files are produced.
     @Override public void enterInterfaceDeclaration(TypeScriptParser.InterfaceDeclarationContext ctx) {
         //Reset the counter for overloads.
         resetOverloadTracker();
 
         isInterface = Boolean.TRUE;
         interfaceName = ctx.IDENT().getText();
+        currentPassName = interfaceName;
+//        rewriter.delete( currentPassName, 0, ctx.start.getStartIndex() );
 
         exportPrep.beginOutputFile( ctx.IDENT().getText() + ".as" );
-        exportPrep.addToPreImport( "package " + exportPrep.packageStructure );
-        exportPrep.addToPreImport( " " );
-        exportPrep.addToPreImport( OPEN_BRACE );
-        exportPrep.addToPreImport( ExportPreparation.LINE_BREAK );
+        String packageString = "";
+        packageString += "package " + exportPrep.packageStructure;
+        packageString += " ";
+        packageString += OPEN_BRACE;
+        packageString += ExportPreparation.LINE_BREAK;
 
+//        exportPrep.addToPreImport( "package " + exportPrep.packageStructure );
+//        exportPrep.addToPreImport( " " );
+//        exportPrep.addToPreImport( OPEN_BRACE );
+//        exportPrep.addToPreImport( ExportPreparation.LINE_BREAK );
+
+        //TODO:: Needs changing for rewriter.
         //Insert import statements
         if ( !( ctx.interfaceExtendsClause() == null ) ) {
             String imports = ctx.interfaceExtendsClause().interfaceNameList().getText();
             writeImports(imports);
         }
 
-        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
-        exportPrep.addToPostImport( ExportPreparation.TAB );
-        exportPrep.addToPostImport( "[JavaScript ( export=false )]");
-        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
-        exportPrep.addToPostImport( ExportPreparation.TAB );
-        exportPrep.addToPostImport( "public interface " + interfaceName );
+        String annotationString = "";
+        annotationString += ExportPreparation.LINE_BREAK;
+        annotationString += ExportPreparation.TAB;
+        annotationString += "[JavaScript ( export=false )]";
+        annotationString += ExportPreparation.LINE_BREAK;
+        annotationString += ExportPreparation.TAB;
+        annotationString += "public interface " + interfaceName;
+        rewriter.insertBefore( currentPassName, ctx.start, annotationString);
+        rewriter.insertBefore( currentPassName, ctx.start, "INSERTS GO HERE");
+        rewriter.insertBefore( currentPassName, ctx.start, packageString);
+
+
+//        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
+//        exportPrep.addToPostImport( ExportPreparation.TAB );
+//        exportPrep.addToPostImport( "[JavaScript ( export=false )]" );
+//        exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
+//        exportPrep.addToPostImport( ExportPreparation.TAB );
+//        exportPrep.addToPostImport( "public interface " + interfaceName );
     }
 
+    //Writing out Interface files.
     @Override public void exitInterfaceDeclaration(TypeScriptParser.InterfaceDeclarationContext ctx) {
+        //Create and close rewriters for each class and interface? How to add in things like imports and other things?
         isInterface = Boolean.FALSE;
         exportPrep.addToPostImport( CLOSE_BRACE );
         exportPrep.addToPostImport( ExportPreparation.LINE_BREAK );
         exportPrep.finishOutputFile();
+
+        //Prints out just the rewritten Interval.
+        System.out.println( rewriter.getText( currentPassName, ctx.getSourceInterval() ) );
+        currentPassName = "";
     }
 
     @Override public void enterComma(TypeScriptParser.CommaContext ctx) { }
